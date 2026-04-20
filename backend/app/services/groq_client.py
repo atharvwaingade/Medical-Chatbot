@@ -70,6 +70,9 @@ Step 7 — EVIDENCE QUALITY
 Step 8 — RETRIEVED CONTEXT (full, verified sources)
 {context}
 
+Step 9 — CONTRASTIVE DDx (distinguishing features between top candidates)
+{contrastive_analysis}
+
 === PATIENT QUERY ===
 {query}
 Reported symptoms: {symptoms}
@@ -154,7 +157,8 @@ class GroqClient:
         cot_context : dict | None
             Structured chain-of-thought metadata from the pipeline:
             ``affirmed_terms``, ``negated_terms``, ``bayesian_ranking``,
-            ``ruling_in_out``, ``evidence_quality``, ``patient_context``.
+            ``ruling_in_out``, ``evidence_quality``, ``patient_context``,
+            ``contrastive_analysis``.
 
         Returns
         -------
@@ -171,6 +175,7 @@ class GroqClient:
         ruling = cot.get("ruling_in_out") or ""
         evidence = cot.get("evidence_quality") or "  Source tiers available in retrieved context."
         patient_ctx = cot.get("patient_context") or "Not specified"
+        contrastive = cot.get("contrastive_analysis") or "  Not available"
 
         prompt = _USER_TEMPLATE.format(
             session_context=session_context + "\n" if session_context else "",
@@ -191,6 +196,7 @@ class GroqClient:
             ruling_in_out=ruling if ruling else "  Not available",
             evidence_quality=evidence,
             context=context,
+            contrastive_analysis=contrastive,
             query=query,
             symptoms=", ".join(symptoms) if symptoms else "none reported",
         )

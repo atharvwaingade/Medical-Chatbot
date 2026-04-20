@@ -28,6 +28,16 @@ class RetrievalMetadata(BaseModel):
     retriever_type: str = "MedHybrid-BM25+SCS+PRF"
 
 
+class ConformalPrediction(BaseModel):
+    """Coverage-guaranteed prediction set (Vovk et al., 2005)."""
+
+    prediction_set: list[str]
+    coverage_level: float
+    threshold: float
+    set_size: int
+    calibration_n: int
+
+
 class AssistantResponse(BaseModel):
     possible_conditions: list[str]
     explanation: str
@@ -39,6 +49,17 @@ class AssistantResponse(BaseModel):
     sources: list[str] | None = None
     session_id: str | None = None
     retrieval_metadata: RetrievalMetadata | None = None
+    # ── Novel research contributions ──────────────────────────────────────
+    symptom_attributions: dict[str, float] | None = None
+    """LOO Shapley attribution of each symptom token to the top diagnosis."""
+    next_question: str | None = None
+    """Information-theoretically optimal follow-up question to ask the patient."""
+    discriminating_symptom: str | None = None
+    """The canonical symptom behind next_question (machine-readable)."""
+    expected_information_gain: float | None = None
+    """Expected entropy reduction from asking next_question (0–1)."""
+    conformal_prediction: ConformalPrediction | None = None
+    """Prediction set with mathematical 90% coverage guarantee."""
 
 
 class DifferentialEntry(BaseModel):
@@ -62,11 +83,26 @@ class DifferentialEntry(BaseModel):
     aetiology_class: str = ""
 
 
+class ContrastEntry(BaseModel):
+    """Pairwise symptom contrast between two adjacent conditions."""
+
+    condition_a: str
+    condition_b: str
+    for_a: list[str]
+    for_b: list[str]
+    shared: list[str]
+    patient_discriminating_a: list[str]
+    patient_discriminating_b: list[str]
+    ambiguous: bool
+
+
 class DifferentialResponse(BaseModel):
     differentials: list[DifferentialEntry]
     query_metadata: RetrievalMetadata
     disclaimer: str
     session_id: str | None = None
+    contrasts: list[ContrastEntry] | None = None
+    """Pairwise contrastive DDx analysis for top adjacent condition pairs."""
 
 
 class HealthResponse(BaseModel):

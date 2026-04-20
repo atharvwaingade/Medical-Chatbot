@@ -4,12 +4,16 @@ import json
 import logging
 import math
 
+from app.rag.active_inquiry import recommend_next_question
 from app.rag.causal_graph import MedCausalGraph
+from app.rag.conformal import ConformalPredictor
+from app.rag.contrastive import compute_pairwise_contrasts, format_contrasts_for_prompt
 from app.rag.dataset import MedicalDataset
 from app.rag.evidence_grader import confidence_bonus, grade_source, tier_description
 from app.rag.query_processor import QueryProcessor
 from app.rag.raptor import MedRAPTOR
 from app.rag.retriever import RetrievalResult, Retriever
+from app.rag.symptom_attribution import compute_symptom_attributions
 from app.safety.rules import detect_emergency, detect_red_flags
 from app.safety.validator import OutputValidator, SAFE_DISCLAIMER
 from app.services.groq_client import GroqClient
@@ -111,6 +115,9 @@ class RAGPipeline:
         # Build RAPTOR hierarchy from KB entries
         self.raptor = MedRAPTOR()
         self.raptor.build_from_entries(self.dataset.entries)
+
+        # Conformal predictor (calibrated lazily on first query)
+        self.conformal = ConformalPredictor(self.retriever)
 
     @property
     def ready(self) -> bool:
@@ -310,11 +317,13 @@ class RAGPipeline:
         pq,
         results: list[RetrievalResult],
         session_ctx: str,
+        affirmed_set: set[str] | None = None,
     ) -> dict:
         """
         Build the structured chain-of-thought context for the LLM.
 
-        Populates all eight fields of the MedCoT-DDx illness-script template.
+        Populates all nine fields of the MedCoT-DDx illness-script template,
+        including the new Step 9 contrastive DDx analysis.
         """
         # Bayesian ranking from hybrid scores (already MAP-calibrated)
         bayesian_ranking: list[tuple[str, float]] = [
@@ -355,6 +364,11 @@ class RAGPipeline:
             if hctx.get("syndrome"):
                 patient_ctx_parts.append(f"Syndrome cluster: {hctx['syndrome']}")
 
+        # Step 9: Contrastive DDx analysis
+        affirmed = affirmed_set or set(pq.medical_tokens)
+        contrasts = compute_pairwise_contrasts(results, affirmed)
+        contrastive_text = format_contrasts_for_prompt(contrasts)
+
         return {
             "affirmed_terms": pq.normalized_terms or pq.medical_tokens,
             "negated_terms": pq.negated_terms,
@@ -362,6 +376,7 @@ class RAGPipeline:
             "ruling_in_out": ruling_in_out,
             "evidence_quality": evidence_quality,
             "patient_context": "; ".join(patient_ctx_parts) if patient_ctx_parts else "Not specified",
+            "contrastive_analysis": contrastive_text,
         }
 
     # ------------------------------------------------------------------
@@ -538,7 +553,7 @@ class RAGPipeline:
 
         # ── 7. CoT context + LLM generation ───────────────────────────
         context = self._build_context(results)
-        cot_context = self._build_cot_context(pq, results, session_context)
+        cot_context = self._build_cot_context(pq, results, session_context, affirmed_set)
 
         try:
             model_response = await self.groq_client.generate(
@@ -555,34 +570,65 @@ class RAGPipeline:
         actual_sources = list({d.get("source", "") for d in docs if d.get("source")})
 
         if model_response is None:
-            fallback = self._fallback_response(results, scores, pq=pq)
-            fallback["sources"] = actual_sources
-            return OutputValidator.sanitize(fallback)
-
-        # ── 8. Ground possible_conditions to retrieved set ────────────
-        allowed_conditions = {d.get("condition", "") for d in docs}
-        model_conds = model_response.get("possible_conditions", [])
-        filtered = [c for c in model_conds if c in allowed_conditions]
-        if not filtered:
-            model_response["possible_conditions"] = [
-                docs[0].get("condition", "Condition not identified")
-            ]
+            response = self._fallback_response(results, scores, pq=pq)
+            response["sources"] = actual_sources
         else:
-            model_response["possible_conditions"] = filtered
+            # ── 8. Ground possible_conditions to retrieved set ────────────
+            allowed_conditions = {d.get("condition", "") for d in docs}
+            model_conds = model_response.get("possible_conditions", [])
+            filtered = [c for c in model_conds if c in allowed_conditions]
+            if not filtered:
+                model_response["possible_conditions"] = [
+                    docs[0].get("condition", "Condition not identified")
+                ]
+            else:
+                model_response["possible_conditions"] = filtered
 
-        # ── 9. Four-Critique Self-RAG loop ────────────────────────────
-        model_response = self._apply_critiques(model_response, results, pq)
+            # ── 9. Four-Critique Self-RAG loop ────────────────────────────
+            model_response = self._apply_critiques(model_response, results, pq)
 
-        # ── 10. Prefix uncertainty marker when confidence is low ──────
-        if model_response.get("confidence") == "low":
-            expl = model_response.get("explanation", "")
-            if not expl.startswith("I am not certain"):
-                model_response["explanation"] = f"I am not certain. {expl}".strip()
+            # ── 10. Prefix uncertainty marker when confidence is low ──────
+            if model_response.get("confidence") == "low":
+                expl = model_response.get("explanation", "")
+                if not expl.startswith("I am not certain"):
+                    model_response["explanation"] = f"I am not certain. {expl}".strip()
 
-        # Always attach reliable sources from retrieved documents
-        model_response["sources"] = actual_sources
+            model_response["sources"] = actual_sources
+            response = model_response
 
-        return OutputValidator.sanitize(model_response)
+        # ── 11. Novel research contributions ─────────────────────────
+        # These are computed regardless of whether Groq is available,
+        # so they appear in both LLM and fallback responses.
+        top_condition = docs[0].get("condition", "") if docs else ""
+
+        # C1: LOO Shapley symptom attributions
+        try:
+            attributions = compute_symptom_attributions(
+                self.retriever, pq.medical_tokens, top_condition
+            )
+            response["symptom_attributions"] = attributions or None
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Shapley attribution failed: %s", exc)
+
+        # C2: Information-theoretic active inquiry
+        try:
+            inquiry = recommend_next_question(self.retriever, pq.medical_tokens, results)
+            if inquiry.get("question"):
+                response["next_question"] = inquiry["question"]
+                response["discriminating_symptom"] = inquiry.get("symptom", "")
+                response["expected_information_gain"] = inquiry.get("expected_ig", 0.0)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Active inquiry failed: %s", exc)
+
+        # C3: Conformal prediction set
+        try:
+            cp_result = self.conformal.predict_set(results)
+            if cp_result.get("prediction_set"):
+                response["conformal_prediction"] = cp_result
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Conformal prediction failed: %s", exc)
+
+        return OutputValidator.sanitize(response)
 
     # ------------------------------------------------------------------
     # Differential diagnosis
@@ -671,7 +717,8 @@ class RAGPipeline:
                 "negated_terms": pq.negated_terms,
                 "expanded_terms": pq.normalized_terms,
                 "retrieval_entropy": round(entropy, 4),
-                "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)",
+                "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR+Contrastive)",
             },
             "disclaimer": SAFE_DISCLAIMER,
+            "contrasts": compute_pairwise_contrasts(results, affirmed_set),
         }
