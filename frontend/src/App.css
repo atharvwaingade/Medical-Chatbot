@@ -1,0 +1,89 @@
+.app {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+  color: #111827;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+h1 {
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+input {
+  flex: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+}
+
+button {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.severity {
+  text-transform: capitalize;
+  font-weight: 700;
+}
+
+.disclaimer-banner {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.disclaimer {
+  background: #f9fafb;
+  border-left: 3px solid #4b5563;
+  padding: 0.5rem;
+}
+
+.error {
+  color: #dc2626;
+  margin-top: 0;
+}
+
+.history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.history li {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+}

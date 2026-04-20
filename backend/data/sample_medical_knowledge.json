@@ -1,0 +1,57 @@
+[
+  {
+    "source": "WHO - Respiratory Tract Infection Guidance",
+    "verified": true,
+    "condition": "Common Cold",
+    "symptoms": ["runny nose", "sore throat", "mild cough", "sneezing"],
+    "explanation": "A viral upper respiratory infection that is usually self-limiting.",
+    "recommended_action": "Hydration, rest, and monitor symptoms.",
+    "when_to_see_doctor": "If fever lasts more than 3 days or breathing becomes difficult.",
+    "severity": "low",
+    "warnings": ["persistent high fever", "breathing difficulty"]
+  },
+  {
+    "source": "CDC - Influenza",
+    "verified": true,
+    "condition": "Influenza",
+    "symptoms": ["fever", "body aches", "fatigue", "dry cough"],
+    "explanation": "Flu is a contagious respiratory illness that can cause moderate to severe symptoms.",
+    "recommended_action": "Rest, fluids, and discuss antiviral options with a clinician within 48 hours.",
+    "when_to_see_doctor": "If high-risk or if shortness of breath, chest pain, or dehydration occurs.",
+    "severity": "medium",
+    "warnings": ["chest pain", "shortness of breath", "confusion"]
+  },
+  {
+    "source": "PubMed Abstracts - Migraine Overview",
+    "verified": true,
+    "condition": "Migraine",
+    "symptoms": ["headache", "nausea", "light sensitivity", "throbbing pain"],
+    "explanation": "A recurrent headache disorder with associated neurologic symptoms.",
+    "recommended_action": "Rest in a dark room, hydration, and appropriate pain relief under guidance.",
+    "when_to_see_doctor": "If this is the worst headache ever or with neurologic deficits.",
+    "severity": "medium",
+    "warnings": ["sudden severe headache", "vision changes", "weakness"]
+  },
+  {
+    "source": "WHO - Gastroenteritis",
+    "verified": true,
+    "condition": "Acute Gastroenteritis",
+    "symptoms": ["diarrhea", "vomiting", "abdominal cramps", "nausea"],
+    "explanation": "Inflammation of the stomach and intestines often due to infection.",
+    "recommended_action": "Oral rehydration and monitor urine output and hydration signs.",
+    "when_to_see_doctor": "If unable to keep fluids down, blood in stool, or severe dehydration signs.",
+    "severity": "medium",
+    "warnings": ["dehydration", "blood in stool", "persistent vomiting"]
+  },
+  {
+    "source": "Medical Textbook - Myocardial Infarction Red Flags",
+    "verified": true,
+    "condition": "Possible Acute Coronary Syndrome",
+    "symptoms": ["chest pain", "left arm pain", "sweating", "nausea"],
+    "explanation": "Reduced blood flow to heart muscle can present with chest pressure and autonomic symptoms.",
+    "recommended_action": "Seek emergency medical help immediately.",
+    "when_to_see_doctor": "Call emergency services now.",
+    "severity": "high",
+    "warnings": ["chest pain", "shortness of breath", "fainting"]
+  }
+]
