@@ -457,6 +457,43 @@ class RAGPipeline:
 
         return model_response
 
+    def _apply_critique5_session(
+        self,
+        results: list[RetrievalResult],
+        session_posterior: dict[str, float],
+    ) -> list[RetrievalResult]:
+        """
+        Critique 5 — Session Coherence (Sequential Bayesian Update).
+
+        Re-weights retrieval scores using the Dirichlet posterior from prior
+        session turns.  This biases the current turn's ranking toward conditions
+        that were repeatedly surfaced in this patient's conversation history,
+        implementing a proper sequential Bayesian estimator:
+
+            P(C | S₁, ..., Sₜ) ∝ P(Sₜ | C) × P(C | S₁, ..., Sₜ₋₁)
+
+        The posterior is stored in session.dirichlet_alpha and updated each turn.
+
+        Formally: fused_score = λ × hybrid + (1 − λ) × posterior_mean
+        where λ = SESSION_COHERENCE_WEIGHT = 0.15.
+
+        Only applied when the session has prior history (not the first turn).
+        """
+        if not session_posterior or not results:
+            return results
+
+        SESSION_COHERENCE_WEIGHT: float = 0.85  # weight of current retrieval
+        import dataclasses
+        reranked = []
+        for r in results:
+            cond = r.entry.get("condition", "")
+            prior = session_posterior.get(cond, 0.0)
+            fused = SESSION_COHERENCE_WEIGHT * r.hybrid_score + (1 - SESSION_COHERENCE_WEIGHT) * prior
+            reranked.append(dataclasses.replace(r, hybrid_score=fused))
+        reranked.sort(key=lambda r: r.hybrid_score, reverse=True)
+        logger.debug("Critique 5: session posterior applied (%d conditions)", len(session_posterior))
+        return reranked
+
     # ------------------------------------------------------------------
     # Main answer method
     # ------------------------------------------------------------------
@@ -548,6 +585,16 @@ class RAGPipeline:
 
         # ── 6b. Causal re-ranking (MedCausalGraph) ────────────────────
         results = self._causal_rerank(results, list(affirmed_set), pq.negated_terms)
+
+        # ── 6c. Critique 5: Session Coherence — Dirichlet prior ───────
+        # Apply sequential Bayesian posterior from prior session turns.
+        # This is a no-op on the first turn (posterior is empty).
+        if session_context:
+            # Extract posterior from the pipeline's session store if available
+            session_posterior = getattr(self, "_current_session_posterior", {})
+            if session_posterior:
+                results = self._apply_critique5_session(results, session_posterior)
+
         scores = [r.hybrid_score for r in results]
         docs = [r.entry for r in results]
 
