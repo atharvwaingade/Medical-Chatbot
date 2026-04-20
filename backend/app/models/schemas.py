@@ -47,6 +47,8 @@ class DifferentialEntry(BaseModel):
     icd10: str | None = None
     hybrid_score: float
     symptom_match_ratio: float
+    prevalence_score: float = 0.0
+    causal_score: float = 0.0
     evidence_tier: int
     evidence_tier_description: str
     source: str
@@ -55,6 +57,9 @@ class DifferentialEntry(BaseModel):
     ruling_out_symptoms: list[str]
     severity: str
     recommended_action: str
+    syndrome_cluster: str = ""
+    organ_system: str = ""
+    aetiology_class: str = ""
 
 
 class DifferentialResponse(BaseModel):

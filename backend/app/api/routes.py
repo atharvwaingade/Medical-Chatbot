@@ -63,7 +63,7 @@ async def health(request: Request):
         "rag_ready": pipeline.ready,
         "provider": "groq" if settings.groq_api_key else "fallback",
         "knowledge_entries": len(pipeline.dataset.entries),
-        "retriever_type": "MedHybrid-BM25+SCS+PRF",
+        "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)",
         "active_sessions": len(store),
     }
 
@@ -93,7 +93,7 @@ async def ask(payload: AskRequest, request: Request):
         "negated_terms": pq.negated_terms,
         "expanded_terms": pq.normalized_terms,
         "retrieval_entropy": round(entropy, 4),
-        "retriever_type": "MedHybrid-BM25+SCS+PRF",
+        "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)",
     }
     result["session_id"] = sid
 
@@ -135,7 +135,7 @@ async def symptom_check(payload: SymptomCheckRequest, request: Request):
         "negated_terms": pq.negated_terms,
         "expanded_terms": pq.normalized_terms,
         "retrieval_entropy": round(entropy, 4),
-        "retriever_type": "MedHybrid-BM25+SCS+PRF",
+        "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)",
     }
     result["session_id"] = sid
 

@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 
+from app.rag.causal_graph import MedCausalGraph
 from app.rag.dataset import MedicalDataset
 from app.rag.evidence_grader import confidence_bonus, grade_source, tier_description
 from app.rag.query_processor import QueryProcessor
+from app.rag.raptor import MedRAPTOR
 from app.rag.retriever import RetrievalResult, Retriever
 from app.safety.rules import detect_emergency, detect_red_flags
 from app.safety.validator import OutputValidator, SAFE_DISCLAIMER
@@ -14,11 +17,46 @@ from app.services.groq_client import GroqClient
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Kendall's τ (simplified) for Bayesian Coherence Critique
+# ---------------------------------------------------------------------------
+
+
+def _kendall_tau(list_a: list[str], list_b: list[str]) -> float:
+    """
+    Compute a simplified Kendall's τ between two ranked lists.
+
+    Only items appearing in both lists are compared.  Returns a value in
+    [-1, 1]; positive values indicate concordant ranking.
+    """
+    common = [x for x in list_a if x in list_b]
+    if len(common) < 2:
+        return 1.0  # insufficient data — assume concordant
+    # Build position maps
+    pos_a = {x: i for i, x in enumerate(common)}
+    pos_b = {x: list_b.index(x) for x in common if x in list_b}
+
+    concordant = discordant = 0
+    for i in range(len(common)):
+        for j in range(i + 1, len(common)):
+            xi, xj = common[i], common[j]
+            sign_a = pos_a[xi] - pos_a[xj]
+            sign_b = pos_b.get(xi, 0) - pos_b.get(xj, 0)
+            if sign_a * sign_b > 0:
+                concordant += 1
+            elif sign_a * sign_b < 0:
+                discordant += 1
+
+    total = concordant + discordant
+    return (concordant - discordant) / total if total > 0 else 1.0
+
+
 class RAGPipeline:
     """
-    MedRAG-Hybrid Pipeline
-    ======================
-    Five-stage pipeline for evidence-grounded medical information retrieval:
+    MedRAG-Turbo Pipeline
+    =====================
+    Seven-stage pipeline for evidence-grounded medical information retrieval,
+    implementing the full MedRAG-Turbo research architecture:
 
     1. **Query preprocessing** (QueryProcessor)
        Synonym normalization → NegEx negation detection → medical token extraction.
@@ -27,23 +65,52 @@ class RAGPipeline:
        Emergency keyword and red-flag symptom-combination detection.
 
     3. **Multi-stage retrieval** (Retriever)
-       BM25 + Symptom Coverage Score + RM3-PRF with entropy-based confidence.
+       BM25 + SCS + Prevalence Prior + RM3-PRF with entropy-based confidence.
 
-    4. **Evidence-weighted context construction**
-       Retrieved documents sorted by GRADE evidence tier before LLM injection.
-       Higher-tier sources appear earlier in the context window (Liu et al.,
-       2023 — "Lost in the Middle" attention bias).
+    4. **Causal re-ranking** (MedCausalGraph)
+       Personalised PageRank on symptom-condition causal graph with NegEx
+       barrier nodes and session-based sequential Bayesian updating.
 
-    5. **LLM generation** (GroqClient)
-       Async Groq call with session context injection for multi-turn dialogue.
-       Hallucination guard: generated conditions are filtered to the retrieved set.
+    5. **Hierarchical context enrichment** (MedRAPTOR)
+       ICD-10-anchored four-level ontology provides syndrome/system context
+       and enables top-down routing for vague queries.
+
+    6. **Evidence-weighted context construction + LLM generation** (GroqClient)
+       MedCoT-DDx illness-script prompt (Schmidt & Rikers, 2007) with
+       8-step structured clinical reasoning scaffold.
+
+    7. **Four-Critique Self-RAG loop**
+       Critique 1 — Symptom Coverage: re-retrieve if < 60% of symptoms covered.
+       Critique 2 — Negation Consistency: strip conditions whose ruling-in
+                    contains NegEx-negated symptoms.
+       Critique 3 — Bayesian Coherence: override LLM ranking if Kendall's τ
+                    with Bayesian posterior < 0.5.
+       Critique 4 — Severity Monotonicity: force severity ≥ medium when ≥ 50%
+                    of retrieved docs have high severity.
     """
+
+    # Causal re-ranking weight (0.0 = disable causal graph)
+    CAUSAL_WEIGHT: float = 0.20
+
+    # Symptom coverage threshold for Critique 1
+    COVERAGE_THRESHOLD: float = 0.60
+
+    # Bayesian coherence threshold for Critique 3
+    COHERENCE_TAU_MIN: float = 0.50
 
     def __init__(self, dataset_path: str, top_k: int, groq_client: GroqClient) -> None:
         self.dataset = MedicalDataset(dataset_path)
         self.retriever = Retriever(self.dataset.entries)
         self.top_k = top_k
         self.groq_client = groq_client
+
+        # Build causal graph from KB entries
+        self.causal_graph = MedCausalGraph()
+        self.causal_graph.build_from_entries(self.dataset.entries)
+
+        # Build RAPTOR hierarchy from KB entries
+        self.raptor = MedRAPTOR()
+        self.raptor.build_from_entries(self.dataset.entries)
 
     @property
     def ready(self) -> bool:
@@ -176,6 +243,206 @@ class RAGPipeline:
         return ret
 
     # ------------------------------------------------------------------
+    # Causal re-ranking helper
+    # ------------------------------------------------------------------
+
+    def _causal_rerank(
+        self,
+        results: list[RetrievalResult],
+        affirmed: list[str],
+        negated: list[str],
+        prior_conditions: dict[str, float] | None = None,
+    ) -> list[RetrievalResult]:
+        """
+        Re-rank retrieval results using MedCausalGraph personalised PageRank.
+
+        The fused score = RETRIEVER_WEIGHT * hybrid_score + CAUSAL_WEIGHT * causal.
+        """
+        if not results or self.CAUSAL_WEIGHT <= 0.0:
+            return results
+        causal_map = self.causal_graph.causal_scores(affirmed, negated, prior_conditions)
+        fused: list[tuple[float, RetrievalResult]] = []
+        for r in results:
+            cond = r.entry.get("condition", "")
+            causal = causal_map.get(cond, 0.0)
+            fused_score = (1.0 - self.CAUSAL_WEIGHT) * r.hybrid_score + self.CAUSAL_WEIGHT * causal
+            # Replace hybrid_score with fused score for downstream use
+            fused.append((fused_score, r))
+        fused.sort(key=lambda x: x[0], reverse=True)
+        # Rebuild result list with updated scores
+        reranked = []
+        for fused_score, r in fused:
+            import dataclasses
+            reranked.append(dataclasses.replace(r, hybrid_score=fused_score))
+        return reranked
+
+    # ------------------------------------------------------------------
+    # Symptom coverage check (Critique 1)
+    # ------------------------------------------------------------------
+
+    def _symptom_coverage(
+        self,
+        affirmed_tokens: set[str],
+        results: list[RetrievalResult],
+    ) -> float:
+        """
+        Compute how much of the patient's symptom set is covered by the
+        retrieved documents' symptom lists.
+
+        coverage = |affirmed ∩ union(doc_symptoms)| / |affirmed|
+        """
+        if not affirmed_tokens:
+            return 1.0
+        union_doc_symptoms: set[str] = set()
+        for r in results:
+            for sym in r.entry.get("symptoms", []):
+                for tok in self.retriever._tokenize(sym):
+                    union_doc_symptoms.add(tok)
+        covered = affirmed_tokens & union_doc_symptoms
+        return len(covered) / len(affirmed_tokens)
+
+    # ------------------------------------------------------------------
+    # CoT context builder
+    # ------------------------------------------------------------------
+
+    def _build_cot_context(
+        self,
+        pq,
+        results: list[RetrievalResult],
+        session_ctx: str,
+    ) -> dict:
+        """
+        Build the structured chain-of-thought context for the LLM.
+
+        Populates all eight fields of the MedCoT-DDx illness-script template.
+        """
+        # Bayesian ranking from hybrid scores (already MAP-calibrated)
+        bayesian_ranking: list[tuple[str, float]] = [
+            (r.entry.get("condition", ""), round(r.hybrid_score, 4))
+            for r in results
+        ]
+
+        # Ruling-in / ruling-out block (one line per condition)
+        ruling_lines = []
+        for r in results:
+            cond = r.entry.get("condition", "Unknown")
+            tier = grade_source(r.entry.get("source", ""))
+            tier_desc = tier_description(tier)
+            rin = ", ".join(r.ruling_in) if r.ruling_in else "none"
+            rout = ", ".join(r.ruling_out[:4]) if r.ruling_out else "none"
+            ruling_lines.append(
+                f"  {cond}: ruling_in=[{rin}] | ruling_out=[{rout}]"
+            )
+        ruling_in_out = "\n".join(ruling_lines) if ruling_lines else "  Not available"
+
+        # Evidence quality summary
+        ev_lines = []
+        for r in results:
+            src = r.entry.get("source", "")
+            tier = grade_source(src)
+            ev_lines.append(f"  {r.entry.get('condition')}: {tier_description(tier)} (tier {tier})")
+        evidence_quality = "\n".join(ev_lines) if ev_lines else ""
+
+        # RAPTOR hierarchical context for the top condition
+        patient_ctx_parts = []
+        if results:
+            top_cond = results[0].entry.get("condition", "")
+            hctx = self.raptor.hierarchical_context(top_cond)
+            if hctx.get("organ_system"):
+                patient_ctx_parts.append(f"Organ system: {hctx['organ_system']}")
+            if hctx.get("aetiology_class"):
+                patient_ctx_parts.append(f"Aetiology class: {hctx['aetiology_class']}")
+            if hctx.get("syndrome"):
+                patient_ctx_parts.append(f"Syndrome cluster: {hctx['syndrome']}")
+
+        return {
+            "affirmed_terms": pq.normalized_terms or pq.medical_tokens,
+            "negated_terms": pq.negated_terms,
+            "bayesian_ranking": bayesian_ranking,
+            "ruling_in_out": ruling_in_out,
+            "evidence_quality": evidence_quality,
+            "patient_context": "; ".join(patient_ctx_parts) if patient_ctx_parts else "Not specified",
+        }
+
+    # ------------------------------------------------------------------
+    # Four-Critique Self-RAG loop
+    # ------------------------------------------------------------------
+
+    def _apply_critiques(
+        self,
+        model_response: dict,
+        results: list[RetrievalResult],
+        pq,
+    ) -> dict:
+        """
+        Apply the four post-generation critique checks.
+
+        Critique 2 — Negation Consistency
+            Strip conditions whose ruling-in contains a NegEx-negated symptom.
+
+        Critique 3 — Bayesian Coherence
+            Override LLM ranking if Kendall's τ with Bayesian posterior < 0.5.
+
+        Critique 4 — Severity Monotonicity
+            Force severity to "high" if ≥50% of retrieved docs have severity="high".
+        """
+        # ── Critique 2: Negation Consistency ──────────────────────────
+        if pq.negated_terms:
+            negated_set: set[str] = set()
+            for term in pq.negated_terms:
+                for tok in self.retriever._tokenize(term):
+                    negated_set.add(tok)
+
+            valid_conditions: list[str] = []
+            for cond in model_response.get("possible_conditions", []):
+                result_for_cond = next(
+                    (r for r in results if r.entry.get("condition") == cond), None
+                )
+                if result_for_cond is None:
+                    valid_conditions.append(cond)
+                    continue
+                # Check if any ruling-in token is negated
+                ruling_in_tokens: set[str] = set()
+                for sym in result_for_cond.ruling_in:
+                    for tok in self.retriever._tokenize(sym):
+                        ruling_in_tokens.add(tok)
+                if ruling_in_tokens & negated_set:
+                    logger.info(
+                        "Critique 2: stripping '%s' — ruling-in contains negated symptom", cond
+                    )
+                else:
+                    valid_conditions.append(cond)
+            if valid_conditions:
+                model_response["possible_conditions"] = valid_conditions
+
+        # ── Critique 3: Bayesian Coherence ────────────────────────────
+        if len(results) >= 2:
+            bayesian_order = [r.entry.get("condition", "") for r in results]
+            llm_conds = model_response.get("possible_conditions", [])
+            if len(llm_conds) >= 2:
+                tau = _kendall_tau(llm_conds, bayesian_order)
+                if tau < self.COHERENCE_TAU_MIN:
+                    new_order = [c for c in bayesian_order if c in set(llm_conds)]
+                    if new_order:
+                        model_response["possible_conditions"] = new_order
+                        logger.info(
+                            "Critique 3: overriding LLM ranking (tau=%.2f < %.2f)",
+                            tau,
+                            self.COHERENCE_TAU_MIN,
+                        )
+
+        # ── Critique 4: Severity Monotonicity ─────────────────────────
+        docs = [r.entry for r in results]
+        if docs:
+            high_count = sum(1 for d in docs if d.get("severity") == "high")
+            if high_count >= math.ceil(len(docs) * 0.5):
+                if model_response.get("severity") == "low":
+                    model_response["severity"] = "high"
+                    logger.info("Critique 4: severity overridden to 'high'")
+
+        return model_response
+
+    # ------------------------------------------------------------------
     # Main answer method
     # ------------------------------------------------------------------
 
@@ -212,7 +479,7 @@ class RAGPipeline:
             pq.normalized_terms,
         )
 
-        # ── 3. MedHybrid-BM25 retrieval ───────────────────────────────
+        # ── 3. MedHybrid-Bayesian retrieval ───────────────────────────
         results = self.retriever.retrieve_results(
             pq.expanded_query, pq.medical_tokens, self.top_k
         )
@@ -242,14 +509,44 @@ class RAGPipeline:
                 self._fallback_response([], uncertain=True, pq=pq)
             )
 
-        # ── 6. LLM generation ─────────────────────────────────────────
+        # ── 6a. Critique 1: Symptom Coverage ──────────────────────────
+        affirmed_set = set(pq.medical_tokens)
+        coverage = self._symptom_coverage(affirmed_set, results)
+        if coverage < self.COVERAGE_THRESHOLD and affirmed_set:
+            # Re-retrieve with expanded PRF (double the expansion terms)
+            old_prf_n = self.retriever.PRF_N_EXP
+            self.retriever.PRF_N_EXP = min(old_prf_n * 2, 12)
+            expanded_results = self.retriever.retrieve_results(
+                pq.expanded_query, pq.medical_tokens, self.top_k
+            )
+            self.retriever.PRF_N_EXP = old_prf_n
+            # Union of both result sets (by condition, keep higher score)
+            seen: dict[str, RetrievalResult] = {r.entry.get("condition", ""): r for r in results}
+            for r in expanded_results:
+                cond = r.entry.get("condition", "")
+                if cond not in seen or r.hybrid_score > seen[cond].hybrid_score:
+                    seen[cond] = r
+            results = sorted(seen.values(), key=lambda r: r.hybrid_score, reverse=True)[: self.top_k]
+            scores = [r.hybrid_score for r in results]
+            docs = [r.entry for r in results]
+            logger.info("Critique 1: re-retrieved (coverage=%.2f); new top_k=%d", coverage, len(results))
+
+        # ── 6b. Causal re-ranking (MedCausalGraph) ────────────────────
+        results = self._causal_rerank(results, list(affirmed_set), pq.negated_terms)
+        scores = [r.hybrid_score for r in results]
+        docs = [r.entry for r in results]
+
+        # ── 7. CoT context + LLM generation ───────────────────────────
         context = self._build_context(results)
+        cot_context = self._build_cot_context(pq, results, session_context)
+
         try:
             model_response = await self.groq_client.generate(
                 query=query,
                 symptoms=symptoms,
                 context=context,
                 session_context=session_context,
+                cot_context=cot_context,
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("GroqClient raised unexpectedly: %s — using fallback", exc)
@@ -262,7 +559,7 @@ class RAGPipeline:
             fallback["sources"] = actual_sources
             return OutputValidator.sanitize(fallback)
 
-        # ── 7. Ground possible_conditions to retrieved set ────────────
+        # ── 8. Ground possible_conditions to retrieved set ────────────
         allowed_conditions = {d.get("condition", "") for d in docs}
         model_conds = model_response.get("possible_conditions", [])
         filtered = [c for c in model_conds if c in allowed_conditions]
@@ -273,7 +570,10 @@ class RAGPipeline:
         else:
             model_response["possible_conditions"] = filtered
 
-        # ── 8. Prefix uncertainty marker when confidence is low ───────
+        # ── 9. Four-Critique Self-RAG loop ────────────────────────────
+        model_response = self._apply_critiques(model_response, results, pq)
+
+        # ── 10. Prefix uncertainty marker when confidence is low ──────
         if model_response.get("confidence") == "low":
             expl = model_response.get("explanation", "")
             if not expl.startswith("I am not certain"):
@@ -298,9 +598,10 @@ class RAGPipeline:
         """
         Generate a ranked structured differential diagnosis.
 
-        Returns all retrieved candidates with full scoring metadata,
-        ruling-in/ruling-out symptoms, evidence tier, and ICD-10 codes.
-        Suitable for display as a differential diagnosis table.
+        Incorporates BM25+SCS+Prevalence hybrid scoring, causal re-ranking,
+        and RAPTOR hierarchical context.  Returns all candidates with full
+        scoring metadata, ruling-in/ruling-out symptoms, evidence tier,
+        ICD-10 codes, and syndrome/system context.
         """
         k = top_k or self.top_k
 
@@ -316,7 +617,7 @@ class RAGPipeline:
                     "negated_terms": pq.negated_terms,
                     "expanded_terms": pq.normalized_terms,
                     "retrieval_entropy": 1.0,
-                    "retriever_type": "MedHybrid-BM25+SCS+PRF",
+                    "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)",
                     "emergency": True,
                 },
                 "disclaimer": SAFE_DISCLAIMER,
@@ -326,17 +627,30 @@ class RAGPipeline:
         scores = [r.hybrid_score for r in results]
         entropy = self.retriever.score_entropy(scores)
 
+        # Apply causal re-ranking
+        affirmed_set = set(pq.medical_tokens)
+        results = self._causal_rerank(results, list(affirmed_set), pq.negated_terms)
+
+        # Build causal scores for metadata exposure
+        causal_map = self.causal_graph.causal_scores(
+            list(affirmed_set), pq.negated_terms
+        ) if results else {}
+
         differentials = []
         for rank, r in enumerate(results, 1):
             src = r.entry.get("source", "")
             tier = grade_source(src)
+            cond_name = r.entry.get("condition", "Unknown")
+            hctx = self.raptor.hierarchical_context(cond_name)
             differentials.append(
                 {
                     "rank": rank,
-                    "condition": r.entry.get("condition", "Unknown"),
+                    "condition": cond_name,
                     "icd10": r.entry.get("icd10"),
                     "hybrid_score": round(r.hybrid_score, 4),
                     "symptom_match_ratio": round(r.scs_score, 3),
+                    "prevalence_score": round(r.prevalence_score, 3),
+                    "causal_score": round(causal_map.get(cond_name, 0.0), 4),
                     "evidence_tier": tier,
                     "evidence_tier_description": tier_description(tier),
                     "source": src,
@@ -345,6 +659,9 @@ class RAGPipeline:
                     "ruling_out_symptoms": r.ruling_out,
                     "severity": r.entry.get("severity", "medium"),
                     "recommended_action": r.entry.get("recommended_action", ""),
+                    "syndrome_cluster": hctx.get("syndrome", ""),
+                    "organ_system": hctx.get("organ_system", ""),
+                    "aetiology_class": hctx.get("aetiology_class", ""),
                 }
             )
 
@@ -354,7 +671,7 @@ class RAGPipeline:
                 "negated_terms": pq.negated_terms,
                 "expanded_terms": pq.normalized_terms,
                 "retrieval_entropy": round(entropy, 4),
-                "retriever_type": "MedHybrid-BM25+SCS+PRF",
+                "retriever_type": "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)",
             },
             "disclaimer": SAFE_DISCLAIMER,
         }

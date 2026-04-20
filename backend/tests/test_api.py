@@ -31,7 +31,7 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(body["rag_ready"])
         self.assertIn("knowledge_entries", body)
         self.assertGreater(body["knowledge_entries"], 5)
-        self.assertEqual(body["retriever_type"], "MedHybrid-BM25+SCS+PRF")
+        self.assertEqual(body["retriever_type"], "MedRAG-Turbo (BM25+SCS+Prev+Causal+RAPTOR)")
         self.assertIn("active_sessions", body)
 
     def test_health_has_request_id(self):
