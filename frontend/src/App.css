@@ -1,5 +1,5 @@
 .app {
-  max-width: 920px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 2rem 1rem 3rem;
   color: #111827;
@@ -8,21 +8,25 @@
 
 h1 {
   margin-bottom: 0.5rem;
+  font-size: 1.6rem;
 }
 
 h2 {
   margin-top: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  color: #374151;
 }
 
+/* ── Panels ────────────────────────────────────────────────────────── */
 .panel {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   margin-bottom: 1rem;
 }
 
+/* ── Input row ─────────────────────────────────────────────────────── */
 .row {
   display: flex;
   gap: 0.5rem;
@@ -32,45 +36,206 @@ input {
   flex: 1;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  padding: 0.6rem;
+  padding: 0.6rem 0.75rem;
   font-size: 0.95rem;
+  transition: border-color 0.15s;
 }
 
-button {
-  border: none;
-  background: #2563eb;
-  color: #fff;
-  border-radius: 0.5rem;
-  padding: 0.6rem 0.9rem;
-  cursor: pointer;
+input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-button:disabled {
-  opacity: 0.6;
+input:disabled {
+  background: #f9fafb;
   cursor: not-allowed;
 }
 
-.severity {
-  text-transform: capitalize;
-  font-weight: 700;
+/* ── Buttons ───────────────────────────────────────────────────────── */
+button {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s;
 }
 
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  min-width: 70px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.btn-ghost:hover {
+  background: #f3f4f6;
+}
+
+.btn-small {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+/* ── Spinner ───────────────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Hint text ─────────────────────────────────────────────────────── */
+.hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+/* ── Badges ────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  text-transform: capitalize;
+}
+
+/* ── Result layout ─────────────────────────────────────────────────── */
+.response {
+  border-left: 4px solid #2563eb;
+}
+
+.result-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin-bottom: 0.65rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.result-row strong {
+  min-width: 170px;
+  flex-shrink: 0;
+  color: #374151;
+}
+
+.conditions {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+/* ── Confidence bar ────────────────────────────────────────────────── */
+.confidence-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.confidence-label {
+  text-transform: capitalize;
+  font-weight: 600;
+  min-width: 50px;
+}
+
+.confidence-track {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* ── Sources ───────────────────────────────────────────────────────── */
+.sources {
+  align-items: flex-start;
+}
+
+.source-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.source-list li {
+  margin-bottom: 0.2rem;
+}
+
+/* ── Disclaimer ────────────────────────────────────────────────────── */
 .disclaimer-banner {
   background: #fef3c7;
   color: #92400e;
   border-radius: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  margin-bottom: 0;
 }
 
 .disclaimer {
+  margin-top: 0.75rem;
   background: #f9fafb;
   border-left: 3px solid #4b5563;
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: #374151;
 }
 
+/* ── Error ─────────────────────────────────────────────────────────── */
 .error {
   color: #dc2626;
-  margin-top: 0;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+/* ── History ───────────────────────────────────────────────────────── */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.history-header h2 {
+  margin: 0;
 }
 
 .history ul {
@@ -81,9 +246,36 @@ button:disabled {
   gap: 0.5rem;
 }
 
-.history li {
+.history-item {
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.6rem 0.75rem;
   background: #f8fafc;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+
+.history-item:hover,
+.history-item:focus {
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px #93c5fd;
+  outline: none;
+}
+
+.history-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.muted {
+  color: #9ca3af;
+  font-size: 0.88rem;
 }

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class AskRequest(BaseModel):
-    query: str = Field(min_length=2)
+    query: str = Field(min_length=2, max_length=500)
 
 
 class SymptomCheckRequest(BaseModel):
@@ -20,9 +20,12 @@ class AssistantResponse(BaseModel):
     when_to_see_doctor: str
     confidence: Literal["low", "medium", "high"]
     disclaimer: str
+    sources: list[str] | None = None
 
 
 class HealthResponse(BaseModel):
     status: str
     rag_ready: bool
     provider: str
+    knowledge_entries: int
+    retriever_type: str
