@@ -1,11 +1,14 @@
 """
-Tests for the BM25 Retriever.
+Tests for the MedHybrid-BM25+SCS+PRF Retriever.
 
 Validates that:
-- The most symptom-relevant entry ranks highest.
-- IDF correctly down-weights ubiquitous terms.
+- Symptom Coverage Score (SCS) improves ranking on exact symptom matches.
+- PRF expansion terms are correctly extracted from top documents.
+- Score entropy is computed correctly (0 for single result, >0 for multiple).
+- Hybrid scoring produces results sorted descending.
 - Edge cases (empty corpus, empty query) are handled gracefully.
-- retrieve_scored returns (score, entry) tuples in descending order.
+- retrieve_scored backward-compat returns (score, entry) tuples.
+- IDF correctly down-weights ubiquitous terms.
 """
 import unittest
 
@@ -108,14 +111,69 @@ class RetrieverIdfTests(unittest.TestCase):
     """IDF-related correctness: rare terms should drive ranking more than common ones."""
 
     def test_rare_term_beats_common_term(self):
-        """
-        'headache' appears only in Migraine; 'nausea' appears in both Migraine
-        and Gastroenteritis.  A query of only 'headache' should rank Migraine
-        first because the IDF of 'headache' is higher than that of 'nausea'.
-        """
         r = Retriever(_ENTRIES)
         results = r.retrieve("headache", top_k=1)
         self.assertEqual(results[0]["condition"], "Migraine")
+
+
+class RetrieverResultsTests(unittest.TestCase):
+    """Tests for the new retrieve_results() with RetrievalResult objects."""
+
+    def setUp(self):
+        self.retriever = Retriever(_ENTRIES)
+
+    def test_retrieve_results_returns_retrieval_result_objects(self):
+        from app.rag.retriever import RetrievalResult
+        results = self.retriever.retrieve_results("fever body aches", [], top_k=2)
+        self.assertIsInstance(results[0], RetrievalResult)
+
+    def test_retrieve_results_ruling_in_not_empty_for_matching_symptoms(self):
+        results = self.retriever.retrieve_results("fever body aches fatigue", [], top_k=1)
+        # Influenza should rank first; ruling_in should contain overlapping symptoms
+        self.assertGreater(len(results[0].ruling_in), 0)
+
+    def test_retrieve_results_scs_score_in_range(self):
+        results = self.retriever.retrieve_results("fever body aches fatigue", [], top_k=3)
+        for r in results:
+            self.assertGreaterEqual(r.scs_score, 0.0)
+            self.assertLessEqual(r.scs_score, 1.0)
+
+    def test_retrieve_results_hybrid_score_sorted(self):
+        results = self.retriever.retrieve_results("nausea vomiting diarrhea", [], top_k=4)
+        scores = [r.hybrid_score for r in results]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+
+class RetrieverEntropyTests(unittest.TestCase):
+    """Score entropy calculation."""
+
+    def setUp(self):
+        self.retriever = Retriever(_ENTRIES)
+
+    def test_entropy_zero_for_single_score(self):
+        e = self.retriever.score_entropy([5.0])
+        self.assertEqual(e, 0.0)
+
+    def test_entropy_one_for_uniform_distribution(self):
+        e = self.retriever.score_entropy([1.0, 1.0, 1.0, 1.0])
+        self.assertAlmostEqual(e, 1.0, places=5)
+
+    def test_entropy_between_0_and_1(self):
+        e = self.retriever.score_entropy([10.0, 3.0, 1.0])
+        self.assertGreaterEqual(e, 0.0)
+        self.assertLessEqual(e, 1.0)
+
+    def test_confidence_high_when_entropy_low(self):
+        conf = self.retriever.confidence_from_entropy(0.1)
+        self.assertEqual(conf, "high")
+
+    def test_confidence_low_when_entropy_high(self):
+        conf = self.retriever.confidence_from_entropy(0.9)
+        self.assertEqual(conf, "low")
+
+    def test_confidence_medium_in_between(self):
+        conf = self.retriever.confidence_from_entropy(0.5)
+        self.assertEqual(conf, "medium")
 
 
 if __name__ == "__main__":

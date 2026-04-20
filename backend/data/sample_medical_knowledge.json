@@ -3,363 +3,894 @@
     "source": "WHO - Respiratory Tract Infection Guidance",
     "verified": true,
     "condition": "Common Cold",
-    "symptoms": ["runny nose", "sore throat", "mild cough", "sneezing", "nasal congestion", "watery eyes"],
+    "symptoms": [
+      "runny nose",
+      "sore throat",
+      "mild cough",
+      "sneezing",
+      "nasal congestion",
+      "watery eyes"
+    ],
     "explanation": "A viral upper respiratory infection caused by rhinoviruses and other agents, typically self-limiting within 7-10 days.",
     "recommended_action": "Rest, increase fluid intake, saline nasal rinse, and OTC symptom relief as appropriate.",
     "when_to_see_doctor": "If fever persists beyond 3 days, breathing becomes difficult, or symptoms worsen after initial improvement.",
     "severity": "low",
-    "warnings": ["persistent high fever", "breathing difficulty", "ear pain", "sinus pain"]
+    "warnings": [
+      "persistent high fever",
+      "breathing difficulty",
+      "ear pain",
+      "sinus pain"
+    ],
+    "icd10": "J00",
+    "prevalence": "very common"
   },
   {
     "source": "CDC - Influenza (Flu)",
     "verified": true,
     "condition": "Influenza",
-    "symptoms": ["sudden fever", "body aches", "fatigue", "dry cough", "headache", "chills", "sore throat"],
+    "symptoms": [
+      "sudden fever",
+      "body aches",
+      "fatigue",
+      "dry cough",
+      "headache",
+      "chills",
+      "sore throat"
+    ],
     "explanation": "Influenza is a contagious respiratory illness caused by influenza A or B viruses, distinguished from a cold by rapid onset and systemic symptoms.",
     "recommended_action": "Rest, maintain hydration, and discuss antiviral medication (oseltamivir) with a clinician within 48 hours of symptom onset.",
     "when_to_see_doctor": "If high-risk (elderly, immunocompromised, pregnant) or if shortness of breath, chest pain, confusion, or severe vomiting occurs.",
     "severity": "medium",
-    "warnings": ["chest pain", "shortness of breath", "confusion", "persistent vomiting", "severe dehydration"]
+    "warnings": [
+      "chest pain",
+      "shortness of breath",
+      "confusion",
+      "persistent vomiting",
+      "severe dehydration"
+    ],
+    "icd10": "J11.1",
+    "prevalence": "common"
   },
   {
     "source": "PubMed - Migraine Pathophysiology Review",
     "verified": true,
     "condition": "Migraine",
-    "symptoms": ["severe headache", "throbbing head pain", "nausea", "light sensitivity", "sound sensitivity", "visual aura"],
+    "symptoms": [
+      "severe headache",
+      "throbbing head pain",
+      "nausea",
+      "light sensitivity",
+      "sound sensitivity",
+      "visual aura"
+    ],
     "explanation": "A recurrent primary headache disorder involving cortical spreading depression and trigeminovascular activation; often unilateral and pulsating.",
     "recommended_action": "Rest in a quiet dark room, maintain hydration, and use prescribed or OTC analgesics under clinician guidance.",
     "when_to_see_doctor": "If this is the worst headache of your life, fever is present, or neurological symptoms (drooping face, weakness, slurred speech) appear.",
     "severity": "medium",
-    "warnings": ["sudden severe headache", "vision changes", "weakness", "confusion", "stiff neck"]
+    "warnings": [
+      "sudden severe headache",
+      "vision changes",
+      "weakness",
+      "confusion",
+      "stiff neck"
+    ],
+    "icd10": "G43.909",
+    "prevalence": "common"
   },
   {
     "source": "WHO - Acute Gastroenteritis Management",
     "verified": true,
     "condition": "Acute Gastroenteritis",
-    "symptoms": ["diarrhea", "vomiting", "abdominal cramps", "nausea", "low-grade fever", "loss of appetite"],
+    "symptoms": [
+      "diarrhea",
+      "vomiting",
+      "abdominal cramps",
+      "nausea",
+      "low-grade fever",
+      "loss of appetite"
+    ],
     "explanation": "Inflammation of the gastrointestinal tract, most commonly viral (norovirus, rotavirus) or bacterial in origin.",
     "recommended_action": "Oral rehydration solution (ORS), small frequent sips of clear fluids, and monitor urine output as a hydration indicator.",
     "when_to_see_doctor": "If unable to keep any fluids down for more than 24 hours, blood appears in stool, or signs of severe dehydration (no urine, sunken eyes, rapid pulse) are present.",
     "severity": "medium",
-    "warnings": ["dehydration", "blood in stool", "persistent vomiting", "high fever", "severe abdominal pain"]
+    "warnings": [
+      "dehydration",
+      "blood in stool",
+      "persistent vomiting",
+      "high fever",
+      "severe abdominal pain"
+    ],
+    "icd10": "K59.1",
+    "prevalence": "very common"
   },
   {
     "source": "AHA/ACC - Acute Coronary Syndrome Guidelines",
     "verified": true,
     "condition": "Possible Acute Coronary Syndrome",
-    "symptoms": ["chest pain", "chest pressure", "left arm pain", "jaw pain", "sweating", "nausea", "shortness of breath"],
+    "symptoms": [
+      "chest pain",
+      "chest pressure",
+      "left arm pain",
+      "jaw pain",
+      "sweating",
+      "nausea",
+      "shortness of breath"
+    ],
     "explanation": "Acute coronary syndrome encompasses unstable angina and myocardial infarction due to reduced coronary blood flow, often presenting with chest pressure and autonomic symptoms.",
     "recommended_action": "Seek emergency medical help immediately. Do not drive yourself. Chew aspirin 325 mg if not allergic and if advised by emergency services.",
     "when_to_see_doctor": "Call emergency services (911) immediately.",
     "severity": "high",
-    "warnings": ["chest pain", "shortness of breath", "fainting", "palpitations", "severe sweating"]
+    "warnings": [
+      "chest pain",
+      "shortness of breath",
+      "fainting",
+      "palpitations",
+      "severe sweating"
+    ],
+    "icd10": "I24.9",
+    "prevalence": "uncommon"
   },
   {
     "source": "CDC - Urinary Tract Infections",
     "verified": true,
     "condition": "Urinary Tract Infection (UTI)",
-    "symptoms": ["burning urination", "frequent urination", "urgency to urinate", "cloudy urine", "pelvic pain", "strong urine odor"],
+    "symptoms": [
+      "burning urination",
+      "frequent urination",
+      "urgency to urinate",
+      "cloudy urine",
+      "pelvic pain",
+      "strong urine odor"
+    ],
     "explanation": "A bacterial infection of the bladder (cystitis) or urethra, more common in women; caused most often by E. coli.",
     "recommended_action": "Increase fluid intake, avoid irritants (caffeine, alcohol), and seek evaluation for antibiotic treatment.",
     "when_to_see_doctor": "Promptly, especially if fever, flank pain, or chills develop (which may indicate kidney involvement).",
     "severity": "medium",
-    "warnings": ["fever", "chills", "back pain", "flank pain", "blood in urine", "vomiting"]
+    "warnings": [
+      "fever",
+      "chills",
+      "back pain",
+      "flank pain",
+      "blood in urine",
+      "vomiting"
+    ],
+    "icd10": "N39.0",
+    "prevalence": "common"
   },
   {
     "source": "AAAAI - Allergic Rhinitis Practice Parameters",
     "verified": true,
     "condition": "Allergic Rhinitis",
-    "symptoms": ["sneezing", "runny nose", "nasal congestion", "itchy eyes", "watery eyes", "itchy throat", "postnasal drip"],
+    "symptoms": [
+      "sneezing",
+      "runny nose",
+      "nasal congestion",
+      "itchy eyes",
+      "watery eyes",
+      "itchy throat",
+      "postnasal drip"
+    ],
     "explanation": "An IgE-mediated inflammatory response of nasal mucosa to inhaled allergens (pollen, dust mites, pet dander), causing characteristic nasal and ocular symptoms.",
     "recommended_action": "Identify and avoid triggers, use intranasal corticosteroid spray as first-line treatment, and consider antihistamines for symptom relief.",
     "when_to_see_doctor": "If symptoms are severe, persistent, or unresponsive to OTC treatment, or if asthma symptoms co-exist.",
     "severity": "low",
-    "warnings": ["wheezing", "difficulty breathing", "facial swelling", "severe itching"]
+    "warnings": [
+      "wheezing",
+      "difficulty breathing",
+      "facial swelling",
+      "severe itching"
+    ],
+    "icd10": "J30.9",
+    "prevalence": "common"
   },
   {
     "source": "NHLBI - National Asthma Education and Prevention Program",
     "verified": true,
     "condition": "Asthma Exacerbation",
-    "symptoms": ["wheezing", "shortness of breath", "chest tightness", "cough", "difficulty breathing", "nocturnal symptoms"],
+    "symptoms": [
+      "wheezing",
+      "shortness of breath",
+      "chest tightness",
+      "cough",
+      "difficulty breathing",
+      "nocturnal symptoms"
+    ],
     "explanation": "Asthma involves chronic airway inflammation and hyperresponsiveness; exacerbations involve bronchoconstriction triggered by allergens, exercise, infections, or irritants.",
     "recommended_action": "Use prescribed rescue inhaler (short-acting beta-agonist) immediately; sit upright; follow your asthma action plan.",
     "when_to_see_doctor": "Seek emergency care if rescue inhaler provides no relief, lips or fingernails turn blue, or you cannot speak in full sentences.",
     "severity": "medium",
-    "warnings": ["cyanosis", "inability to speak", "severe breathlessness", "altered consciousness"]
+    "warnings": [
+      "cyanosis",
+      "inability to speak",
+      "severe breathlessness",
+      "altered consciousness"
+    ],
+    "icd10": "J45.901",
+    "prevalence": "uncommon"
   },
   {
     "source": "WHO/CDC - COVID-19 Clinical Guidance",
     "verified": true,
     "condition": "COVID-19",
-    "symptoms": ["fever", "dry cough", "fatigue", "loss of taste", "loss of smell", "shortness of breath", "sore throat", "muscle pain", "headache"],
+    "symptoms": [
+      "fever",
+      "dry cough",
+      "fatigue",
+      "loss of taste",
+      "loss of smell",
+      "shortness of breath",
+      "sore throat",
+      "muscle pain",
+      "headache"
+    ],
     "explanation": "COVID-19 is caused by SARS-CoV-2 and ranges from mild respiratory illness to severe pneumonia and multi-organ failure; symptoms typically appear 2-14 days after exposure.",
     "recommended_action": "Isolate immediately, test using PCR or rapid antigen test, rest, hydrate, and monitor oxygen saturation if possible.",
     "when_to_see_doctor": "If oxygen saturation drops below 94%, breathing becomes difficult, chest pain appears, or confusion develops.",
     "severity": "medium",
-    "warnings": ["shortness of breath", "chest pain", "confusion", "cyanosis", "persistent fever"]
+    "warnings": [
+      "shortness of breath",
+      "chest pain",
+      "confusion",
+      "cyanosis",
+      "persistent fever"
+    ],
+    "icd10": "U07.1",
+    "prevalence": "common"
   },
   {
     "source": "APA DSM-5 / NIMH - Generalized Anxiety Disorder",
     "verified": true,
     "condition": "Anxiety Disorder",
-    "symptoms": ["excessive worry", "restlessness", "fatigue", "difficulty concentrating", "muscle tension", "sleep disturbance", "irritability", "palpitations"],
+    "symptoms": [
+      "excessive worry",
+      "restlessness",
+      "fatigue",
+      "difficulty concentrating",
+      "muscle tension",
+      "sleep disturbance",
+      "irritability",
+      "palpitations"
+    ],
     "explanation": "Generalized Anxiety Disorder (GAD) involves persistent, difficult-to-control worry about multiple domains lasting at least 6 months, with significant functional impairment.",
     "recommended_action": "Seek evaluation from a mental health professional; evidence-based treatments include CBT and, in some cases, medication.",
     "when_to_see_doctor": "If symptoms significantly impair daily functioning, work, or relationships, or if you are having thoughts of self-harm.",
     "severity": "medium",
-    "warnings": ["suicidal ideation", "panic attacks", "agoraphobia", "substance use"]
+    "warnings": [
+      "suicidal ideation",
+      "panic attacks",
+      "agoraphobia",
+      "substance use"
+    ],
+    "icd10": "F41.9",
+    "prevalence": "common"
   },
   {
     "source": "WHO / NIMH - Major Depressive Disorder",
     "verified": true,
     "condition": "Depression (Major Depressive Disorder)",
-    "symptoms": ["persistent sadness", "loss of interest", "fatigue", "sleep changes", "appetite changes", "worthlessness", "difficulty concentrating", "hopelessness"],
+    "symptoms": [
+      "persistent sadness",
+      "loss of interest",
+      "fatigue",
+      "sleep changes",
+      "appetite changes",
+      "worthlessness",
+      "difficulty concentrating",
+      "hopelessness"
+    ],
     "explanation": "Major Depressive Disorder is characterized by at least two weeks of depressed mood or anhedonia plus associated symptoms, causing significant distress or functional impairment.",
     "recommended_action": "Seek evaluation by a mental health professional or primary care physician; evidence-based treatments include CBT, interpersonal therapy, and antidepressant medication.",
     "when_to_see_doctor": "Immediately if you have thoughts of self-harm or suicide. Otherwise, seek evaluation within days to weeks.",
     "severity": "medium",
-    "warnings": ["suicidal ideation", "self-harm", "psychosis", "inability to care for self"]
+    "warnings": [
+      "suicidal ideation",
+      "self-harm",
+      "psychosis",
+      "inability to care for self"
+    ],
+    "icd10": "F32.9",
+    "prevalence": "common"
   },
   {
     "source": "NEJM - Acute Appendicitis Review",
     "verified": true,
     "condition": "Appendicitis",
-    "symptoms": ["right lower abdominal pain", "nausea", "vomiting", "fever", "loss of appetite", "pain worse with movement", "rebound tenderness"],
+    "symptoms": [
+      "right lower abdominal pain",
+      "nausea",
+      "vomiting",
+      "fever",
+      "loss of appetite",
+      "pain worse with movement",
+      "rebound tenderness"
+    ],
     "explanation": "Acute appendicitis is inflammation of the vermiform appendix, typically presenting with periumbilical pain that migrates to the right lower quadrant (McBurney's point).",
     "recommended_action": "Seek emergency medical evaluation immediately. Do not eat or drink. Surgery (appendectomy) is the standard treatment.",
     "when_to_see_doctor": "Go to the emergency room immediately. Untreated appendicitis can perforate and cause life-threatening peritonitis.",
     "severity": "high",
-    "warnings": ["severe abdominal pain", "rigidity", "rebound tenderness", "fever above 39°C", "vomiting"]
+    "warnings": [
+      "severe abdominal pain",
+      "rigidity",
+      "rebound tenderness",
+      "fever above 39°C",
+      "vomiting"
+    ],
+    "icd10": "K37",
+    "prevalence": "uncommon"
   },
   {
     "source": "NIH NIDDK - Kidney Stones (Nephrolithiasis)",
     "verified": true,
     "condition": "Kidney Stones (Nephrolithiasis)",
-    "symptoms": ["severe flank pain", "pain radiating to groin", "blood in urine", "nausea", "vomiting", "frequent urination", "painful urination"],
+    "symptoms": [
+      "severe flank pain",
+      "pain radiating to groin",
+      "blood in urine",
+      "nausea",
+      "vomiting",
+      "frequent urination",
+      "painful urination"
+    ],
     "explanation": "Kidney stones are hard mineral and salt deposits that form in the kidneys and cause intense colicky pain when they move through the urinary tract.",
     "recommended_action": "Stay well-hydrated, use prescribed pain relief, and strain urine to catch the stone for analysis. Most small stones pass spontaneously.",
     "when_to_see_doctor": "Immediately if fever, chills, or signs of infection are present. See a urologist if pain is uncontrolled or stone is large.",
     "severity": "medium",
-    "warnings": ["fever", "chills", "signs of infection", "inability to urinate", "uncontrolled pain"]
+    "warnings": [
+      "fever",
+      "chills",
+      "signs of infection",
+      "inability to urinate",
+      "uncontrolled pain"
+    ],
+    "icd10": "N20.0",
+    "prevalence": "uncommon"
   },
   {
     "source": "WHO / AAFP - Iron Deficiency Anemia",
     "verified": true,
     "condition": "Iron Deficiency Anemia",
-    "symptoms": ["fatigue", "weakness", "pale skin", "shortness of breath on exertion", "dizziness", "cold hands and feet", "brittle nails", "headache", "pica"],
+    "symptoms": [
+      "fatigue",
+      "weakness",
+      "pale skin",
+      "shortness of breath on exertion",
+      "dizziness",
+      "cold hands and feet",
+      "brittle nails",
+      "headache",
+      "pica"
+    ],
     "explanation": "Iron deficiency anemia is the most common nutritional deficiency worldwide; insufficient iron impairs hemoglobin synthesis, reducing oxygen-carrying capacity.",
     "recommended_action": "Dietary changes (iron-rich foods) and, if confirmed by blood tests, oral iron supplementation under medical guidance.",
     "when_to_see_doctor": "Promptly for blood tests (CBC, ferritin) to confirm diagnosis. Seek immediate care if severe breathlessness or chest pain occurs.",
     "severity": "medium",
-    "warnings": ["severe breathlessness", "chest pain", "rapid heart rate", "signs of internal bleeding"]
+    "warnings": [
+      "severe breathlessness",
+      "chest pain",
+      "rapid heart rate",
+      "signs of internal bleeding"
+    ],
+    "icd10": "D50.9",
+    "prevalence": "common"
   },
   {
     "source": "ATA - American Thyroid Association Guidelines - Hypothyroidism",
     "verified": true,
     "condition": "Hypothyroidism",
-    "symptoms": ["fatigue", "weight gain", "cold intolerance", "constipation", "dry skin", "hair loss", "depression", "brain fog", "slow heart rate", "muscle cramps"],
+    "symptoms": [
+      "fatigue",
+      "weight gain",
+      "cold intolerance",
+      "constipation",
+      "dry skin",
+      "hair loss",
+      "depression",
+      "brain fog",
+      "slow heart rate",
+      "muscle cramps"
+    ],
     "explanation": "Hypothyroidism results from insufficient thyroid hormone production, most commonly due to Hashimoto's thyroiditis, leading to slowed metabolic processes throughout the body.",
     "recommended_action": "Seek evaluation; diagnosis requires TSH and free T4 blood tests. Treatment is typically daily levothyroxine (synthetic T4).",
     "when_to_see_doctor": "Within days to weeks for blood test evaluation. Seek urgent care if severe confusion, extreme cold intolerance, or loss of consciousness occurs.",
     "severity": "low",
-    "warnings": ["myxedema coma", "severe confusion", "hypothermia", "respiratory failure"]
+    "warnings": [
+      "myxedema coma",
+      "severe confusion",
+      "hypothermia",
+      "respiratory failure"
+    ],
+    "icd10": "E03.9",
+    "prevalence": "uncommon"
   },
   {
     "source": "ATA - American Thyroid Association Guidelines - Hyperthyroidism",
     "verified": true,
     "condition": "Hyperthyroidism",
-    "symptoms": ["weight loss", "rapid heartbeat", "palpitations", "heat intolerance", "excessive sweating", "anxiety", "tremor", "frequent bowel movements", "eye changes"],
+    "symptoms": [
+      "weight loss",
+      "rapid heartbeat",
+      "palpitations",
+      "heat intolerance",
+      "excessive sweating",
+      "anxiety",
+      "tremor",
+      "frequent bowel movements",
+      "eye changes"
+    ],
     "explanation": "Hyperthyroidism is excess thyroid hormone production, most commonly from Graves' disease or toxic nodular goiter, leading to accelerated metabolic rate.",
     "recommended_action": "Seek medical evaluation; diagnosis requires TSH and thyroid hormone blood tests. Treatment options include antithyroid drugs, radioactive iodine, or surgery.",
     "when_to_see_doctor": "Promptly. Seek urgent care if rapid irregular heartbeat, chest pain, high fever with agitation, or extreme weakness occurs (thyroid storm).",
     "severity": "medium",
-    "warnings": ["thyroid storm", "rapid irregular heart rate", "high fever", "severe agitation", "chest pain"]
+    "warnings": [
+      "thyroid storm",
+      "rapid irregular heart rate",
+      "high fever",
+      "severe agitation",
+      "chest pain"
+    ],
+    "icd10": "E05.90",
+    "prevalence": "uncommon"
   },
   {
     "source": "ACG - GERD Clinical Guidelines",
     "verified": true,
     "condition": "Gastroesophageal Reflux Disease (GERD)",
-    "symptoms": ["heartburn", "acid regurgitation", "chest burning", "sour taste", "difficulty swallowing", "chronic cough", "hoarseness", "throat clearing"],
+    "symptoms": [
+      "heartburn",
+      "acid regurgitation",
+      "chest burning",
+      "sour taste",
+      "difficulty swallowing",
+      "chronic cough",
+      "hoarseness",
+      "throat clearing"
+    ],
     "explanation": "GERD is chronic reflux of stomach acid into the esophagus due to lower esophageal sphincter dysfunction, causing mucosal irritation and characteristic symptoms.",
     "recommended_action": "Elevate head of bed, avoid trigger foods (fatty food, caffeine, alcohol, citrus), eat smaller meals, and consider OTC antacids or proton pump inhibitors.",
     "when_to_see_doctor": "If symptoms occur more than twice per week, swallowing difficulty, unexplained weight loss, or vomiting blood occurs.",
     "severity": "low",
-    "warnings": ["difficulty swallowing", "vomiting blood", "black tarry stool", "unexplained weight loss", "chest pain"]
+    "warnings": [
+      "difficulty swallowing",
+      "vomiting blood",
+      "black tarry stool",
+      "unexplained weight loss",
+      "chest pain"
+    ],
+    "icd10": "K21.9",
+    "prevalence": "common"
   },
   {
     "source": "ACG - Irritable Bowel Syndrome Monograph",
     "verified": true,
     "condition": "Irritable Bowel Syndrome (IBS)",
-    "symptoms": ["abdominal pain", "bloating", "altered bowel habits", "diarrhea", "constipation", "mucus in stool", "relief after bowel movement"],
+    "symptoms": [
+      "abdominal pain",
+      "bloating",
+      "altered bowel habits",
+      "diarrhea",
+      "constipation",
+      "mucus in stool",
+      "relief after bowel movement"
+    ],
     "explanation": "IBS is a functional gastrointestinal disorder characterized by recurrent abdominal pain associated with altered stool form or frequency, without structural pathology.",
     "recommended_action": "Dietary modification (low-FODMAP diet), stress management, regular physical activity, and, if needed, medical therapy under clinician guidance.",
     "when_to_see_doctor": "If rectal bleeding, unintentional weight loss, nocturnal symptoms, family history of colon cancer, or new symptoms after age 50.",
     "severity": "low",
-    "warnings": ["rectal bleeding", "weight loss", "night sweats", "fever", "iron deficiency"]
+    "warnings": [
+      "rectal bleeding",
+      "weight loss",
+      "night sweats",
+      "fever",
+      "iron deficiency"
+    ],
+    "icd10": "K58.9",
+    "prevalence": "common"
   },
   {
     "source": "ATS/IDSA - Community-Acquired Pneumonia Guidelines",
     "verified": true,
     "condition": "Community-Acquired Pneumonia",
-    "symptoms": ["productive cough", "fever", "chills", "shortness of breath", "chest pain on breathing", "fatigue", "sweating", "confusion in elderly"],
+    "symptoms": [
+      "productive cough",
+      "fever",
+      "chills",
+      "shortness of breath",
+      "chest pain on breathing",
+      "fatigue",
+      "sweating",
+      "confusion in elderly"
+    ],
     "explanation": "Community-acquired pneumonia (CAP) is an acute infection of the lung parenchyma acquired outside of hospital settings, caused by bacteria (S. pneumoniae), viruses, or atypicals.",
     "recommended_action": "Seek prompt medical evaluation for diagnosis (chest X-ray) and antibiotic treatment as appropriate. Rest and maintain hydration.",
     "when_to_see_doctor": "Within 24 hours, sooner if breathing is labored, oxygen saturation is low, confusion is present, or blood pressure drops.",
     "severity": "high",
-    "warnings": ["severe breathlessness", "cyanosis", "confusion", "low blood pressure", "respiratory failure"]
+    "warnings": [
+      "severe breathlessness",
+      "cyanosis",
+      "confusion",
+      "low blood pressure",
+      "respiratory failure"
+    ],
+    "icd10": "J18.9",
+    "prevalence": "uncommon"
   },
   {
     "source": "AAO-HNS - Benign Paroxysmal Positional Vertigo Guidelines",
     "verified": true,
     "condition": "Benign Paroxysmal Positional Vertigo (BPPV)",
-    "symptoms": ["dizziness", "vertigo", "spinning sensation", "nausea", "vomiting", "balance problems", "symptoms triggered by head movement"],
+    "symptoms": [
+      "dizziness",
+      "vertigo",
+      "spinning sensation",
+      "nausea",
+      "vomiting",
+      "balance problems",
+      "symptoms triggered by head movement"
+    ],
     "explanation": "BPPV is caused by displaced calcium carbonate crystals (otoliths) in the semicircular canals, causing brief intense vertigo episodes triggered by position changes.",
     "recommended_action": "The Epley maneuver performed by a trained clinician is highly effective. Avoid sudden position changes that trigger symptoms.",
     "when_to_see_doctor": "If vertigo is accompanied by hearing loss, tinnitus, neurological symptoms, or does not resolve within weeks.",
     "severity": "low",
-    "warnings": ["sudden hearing loss", "double vision", "weakness", "numbness", "severe headache"]
+    "warnings": [
+      "sudden hearing loss",
+      "double vision",
+      "weakness",
+      "numbness",
+      "severe headache"
+    ],
+    "icd10": "H81.10",
+    "prevalence": "uncommon"
   },
   {
     "source": "AAP - Acute Otitis Media Clinical Practice Guidelines",
     "verified": true,
     "condition": "Acute Otitis Media (Ear Infection)",
-    "symptoms": ["ear pain", "ear fullness", "hearing difficulty", "fever", "irritability in children", "fluid draining from ear", "sleep disturbance"],
+    "symptoms": [
+      "ear pain",
+      "ear fullness",
+      "hearing difficulty",
+      "fever",
+      "irritability in children",
+      "fluid draining from ear",
+      "sleep disturbance"
+    ],
     "explanation": "Acute otitis media is a bacterial or viral middle ear infection, most common in children; caused by S. pneumoniae, H. influenzae, and M. catarrhalis.",
     "recommended_action": "Pain management with OTC analgesics. Antibiotics are indicated for severe cases, young children, or when symptoms worsen or persist beyond 48-72 hours.",
     "when_to_see_doctor": "If fever is high, severe ear pain, or if symptoms worsen or do not improve within 2-3 days.",
     "severity": "low",
-    "warnings": ["mastoid tenderness", "facial weakness", "vertigo", "high fever", "drainage"]
+    "warnings": [
+      "mastoid tenderness",
+      "facial weakness",
+      "vertigo",
+      "high fever",
+      "drainage"
+    ],
+    "icd10": "H66.90",
+    "prevalence": "common"
   },
   {
     "source": "AAD - Contact Dermatitis Clinical Guidelines",
     "verified": true,
     "condition": "Contact Dermatitis",
-    "symptoms": ["skin rash", "redness", "itching", "blistering", "swelling", "burning sensation", "dry skin", "skin scaling"],
+    "symptoms": [
+      "skin rash",
+      "redness",
+      "itching",
+      "blistering",
+      "swelling",
+      "burning sensation",
+      "dry skin",
+      "skin scaling"
+    ],
     "explanation": "Contact dermatitis is inflammation of the skin caused by direct contact with an irritant (irritant CD) or allergen (allergic CD), mediated by T-cell immune response in the allergic type.",
     "recommended_action": "Identify and avoid the causative agent, apply cool compresses, and use topical corticosteroids as directed. Keep skin moisturized.",
     "when_to_see_doctor": "If rash spreads rapidly, facial swelling occurs, breathing becomes difficult (anaphylaxis), or rash does not improve within 1-2 weeks.",
     "severity": "low",
-    "warnings": ["facial swelling", "difficulty breathing", "anaphylaxis", "widespread blistering", "secondary infection"]
+    "warnings": [
+      "facial swelling",
+      "difficulty breathing",
+      "anaphylaxis",
+      "widespread blistering",
+      "secondary infection"
+    ],
+    "icd10": "L25.9",
+    "prevalence": "common"
   },
   {
     "source": "ACCP - Deep Vein Thrombosis Antithrombotic Therapy Guidelines",
     "verified": true,
     "condition": "Deep Vein Thrombosis (DVT)",
-    "symptoms": ["leg swelling", "calf pain", "leg warmth", "leg redness", "tenderness in calf", "pain worsening with walking"],
+    "symptoms": [
+      "leg swelling",
+      "calf pain",
+      "leg warmth",
+      "leg redness",
+      "tenderness in calf",
+      "pain worsening with walking"
+    ],
     "explanation": "DVT is a blood clot in a deep vein (usually in the leg), caused by stasis, hypercoagulability, or endothelial injury (Virchow's triad), and carries a risk of pulmonary embolism.",
     "recommended_action": "Seek urgent medical evaluation. Do not massage the leg. Anticoagulation therapy is the standard treatment.",
     "when_to_see_doctor": "Immediately if symptoms are present, especially with sudden shortness of breath, which may indicate a pulmonary embolism.",
     "severity": "high",
-    "warnings": ["sudden shortness of breath", "chest pain", "rapid heart rate", "coughing blood", "fainting"]
+    "warnings": [
+      "sudden shortness of breath",
+      "chest pain",
+      "rapid heart rate",
+      "coughing blood",
+      "fainting"
+    ],
+    "icd10": "I82.409",
+    "prevalence": "uncommon"
   },
   {
     "source": "ESC - Pulmonary Embolism Guidelines",
     "verified": true,
     "condition": "Pulmonary Embolism",
-    "symptoms": ["sudden shortness of breath", "chest pain", "rapid heart rate", "coughing blood", "dizziness", "fainting", "leg swelling"],
+    "symptoms": [
+      "sudden shortness of breath",
+      "chest pain",
+      "rapid heart rate",
+      "coughing blood",
+      "dizziness",
+      "fainting",
+      "leg swelling"
+    ],
     "explanation": "Pulmonary embolism (PE) is a life-threatening blockage of the pulmonary arteries, usually from a blood clot originating in the deep veins of the legs.",
     "recommended_action": "Call emergency services immediately. This is a medical emergency requiring immediate hospital evaluation.",
     "when_to_see_doctor": "Call emergency services now.",
     "severity": "high",
-    "warnings": ["cardiac arrest", "severe hypotension", "cyanosis", "loss of consciousness"]
+    "warnings": [
+      "cardiac arrest",
+      "severe hypotension",
+      "cyanosis",
+      "loss of consciousness"
+    ],
+    "icd10": "I26.99",
+    "prevalence": "rare"
   },
   {
     "source": "AHA/ASA - Ischemic Stroke Early Management Guidelines",
     "verified": true,
     "condition": "Ischemic Stroke",
-    "symptoms": ["sudden facial drooping", "arm weakness", "speech difficulty", "sudden confusion", "sudden vision loss", "severe sudden headache", "sudden dizziness", "loss of balance"],
+    "symptoms": [
+      "sudden facial drooping",
+      "arm weakness",
+      "speech difficulty",
+      "sudden confusion",
+      "sudden vision loss",
+      "severe sudden headache",
+      "sudden dizziness",
+      "loss of balance"
+    ],
     "explanation": "Ischemic stroke results from sudden occlusion of a cerebral artery, causing brain tissue death. The FAST acronym (Face, Arms, Speech, Time) captures core symptoms.",
     "recommended_action": "Call emergency services immediately. Time is brain — thrombolytic therapy (tPA) is most effective within 4.5 hours of symptom onset.",
     "when_to_see_doctor": "Call emergency services now. Do not wait.",
     "severity": "high",
-    "warnings": ["loss of consciousness", "seizure", "worsening neurological deficit", "herniation"]
+    "warnings": [
+      "loss of consciousness",
+      "seizure",
+      "worsening neurological deficit",
+      "herniation"
+    ],
+    "icd10": "I63.9",
+    "prevalence": "uncommon"
   },
   {
     "source": "ADA - Standards of Medical Care in Diabetes",
     "verified": true,
     "condition": "Type 2 Diabetes Mellitus",
-    "symptoms": ["increased thirst", "frequent urination", "blurred vision", "fatigue", "slow-healing wounds", "recurrent infections", "darkened skin in folds", "unexplained weight loss"],
+    "symptoms": [
+      "increased thirst",
+      "frequent urination",
+      "blurred vision",
+      "fatigue",
+      "slow-healing wounds",
+      "recurrent infections",
+      "darkened skin in folds",
+      "unexplained weight loss"
+    ],
     "explanation": "Type 2 diabetes involves progressive insulin resistance and beta-cell dysfunction, leading to chronic hyperglycemia and long-term complications if unmanaged.",
     "recommended_action": "Seek blood glucose testing (fasting glucose or HbA1c). Lifestyle changes (diet, exercise) are foundational; medication added as needed by your clinician.",
     "when_to_see_doctor": "Within days to weeks for evaluation. Seek urgent care if extreme thirst, confusion, fruity breath, or labored breathing occurs (diabetic ketoacidosis).",
     "severity": "medium",
-    "warnings": ["diabetic ketoacidosis", "hyperosmolar state", "severe hypoglycemia", "confusion", "fruity breath"]
+    "warnings": [
+      "diabetic ketoacidosis",
+      "hyperosmolar state",
+      "severe hypoglycemia",
+      "confusion",
+      "fruity breath"
+    ],
+    "icd10": "E11.9",
+    "prevalence": "common"
   },
   {
     "source": "AHA/ACC - Hypertension Clinical Practice Guidelines",
     "verified": true,
     "condition": "Hypertension (High Blood Pressure)",
-    "symptoms": ["headache", "dizziness", "blurred vision", "chest pain", "shortness of breath", "palpitations", "nosebleeds", "often asymptomatic"],
+    "symptoms": [
+      "headache",
+      "dizziness",
+      "blurred vision",
+      "chest pain",
+      "shortness of breath",
+      "palpitations",
+      "nosebleeds",
+      "often asymptomatic"
+    ],
     "explanation": "Hypertension is sustained elevated blood pressure (≥130/80 mmHg per AHA 2017 guidelines) that damages blood vessels and increases risk of heart attack, stroke, and kidney disease.",
     "recommended_action": "Monitor blood pressure regularly; lifestyle changes (DASH diet, sodium reduction, exercise, weight management). Medication is determined by your clinician.",
     "when_to_see_doctor": "Promptly for blood pressure measurement. Immediately if reading is >180/120 mmHg or if chest pain, severe headache, vision changes, or confusion occurs.",
     "severity": "medium",
-    "warnings": ["hypertensive crisis", "chest pain", "severe headache", "vision changes", "stroke symptoms"]
+    "warnings": [
+      "hypertensive crisis",
+      "chest pain",
+      "severe headache",
+      "vision changes",
+      "stroke symptoms"
+    ],
+    "icd10": "I10",
+    "prevalence": "very common"
   },
   {
     "source": "WHO - Dehydration and Oral Rehydration Therapy",
     "verified": true,
     "condition": "Dehydration",
-    "symptoms": ["thirst", "dark urine", "dry mouth", "headache", "dizziness", "fatigue", "decreased urination", "muscle cramps", "confusion in severe cases"],
+    "symptoms": [
+      "thirst",
+      "dark urine",
+      "dry mouth",
+      "headache",
+      "dizziness",
+      "fatigue",
+      "decreased urination",
+      "muscle cramps",
+      "confusion in severe cases"
+    ],
     "explanation": "Dehydration occurs when fluid loss exceeds intake, impairing physiological functions; causes include sweating, vomiting, diarrhea, and inadequate intake.",
     "recommended_action": "Gradually increase fluid intake with water or oral rehydration solution (ORS). Replace electrolytes for moderate-severe dehydration.",
     "when_to_see_doctor": "If confusion, rapid heart rate, inability to keep fluids down, very dark urine, or fainting occurs.",
     "severity": "low",
-    "warnings": ["confusion", "rapid pulse", "no urine output", "sunken eyes", "extreme weakness"]
+    "warnings": [
+      "confusion",
+      "rapid pulse",
+      "no urine output",
+      "sunken eyes",
+      "extreme weakness"
+    ],
+    "icd10": "E86.0",
+    "prevalence": "common"
   },
   {
     "source": "ACP - Low Back Pain Clinical Practice Guidelines",
     "verified": true,
     "condition": "Nonspecific Low Back Pain",
-    "symptoms": ["lower back pain", "muscle stiffness", "pain worsening with movement", "pain radiating to buttocks", "limited range of motion"],
+    "symptoms": [
+      "lower back pain",
+      "muscle stiffness",
+      "pain worsening with movement",
+      "pain radiating to buttocks",
+      "limited range of motion"
+    ],
     "explanation": "Nonspecific low back pain is the leading cause of disability worldwide; most cases are musculoskeletal without identifiable structural cause and resolve within 4-6 weeks.",
     "recommended_action": "Stay active, apply heat/ice, use OTC analgesics as needed, and consider physical therapy for persistent cases.",
     "when_to_see_doctor": "If pain radiates down the leg with numbness/tingling (possible sciatica), bladder/bowel control problems occur, or pain follows trauma.",
     "severity": "low",
-    "warnings": ["bladder dysfunction", "bowel dysfunction", "progressive weakness", "saddle anesthesia", "trauma"]
+    "warnings": [
+      "bladder dysfunction",
+      "bowel dysfunction",
+      "progressive weakness",
+      "saddle anesthesia",
+      "trauma"
+    ],
+    "icd10": "M54.5",
+    "prevalence": "very common"
   },
   {
     "source": "AAO - Conjunctivitis Preferred Practice Pattern",
     "verified": true,
     "condition": "Conjunctivitis (Pink Eye)",
-    "symptoms": ["red eye", "eye discharge", "eye itching", "tearing", "gritty feeling in eye", "swollen eyelids", "light sensitivity"],
+    "symptoms": [
+      "red eye",
+      "eye discharge",
+      "eye itching",
+      "tearing",
+      "gritty feeling in eye",
+      "swollen eyelids",
+      "light sensitivity"
+    ],
     "explanation": "Conjunctivitis is inflammation of the conjunctiva, caused by bacteria, viruses, or allergens; viral and allergic types are most common and usually self-limiting.",
     "recommended_action": "Practice strict hand hygiene, avoid touching eyes, use clean towels. Bacterial conjunctivitis may require antibiotic eye drops from a clinician.",
     "when_to_see_doctor": "If vision changes, severe eye pain, inability to open eye, or no improvement after 1 week.",
     "severity": "low",
-    "warnings": ["vision loss", "severe pain", "corneal involvement", "herpes infection"]
+    "warnings": [
+      "vision loss",
+      "severe pain",
+      "corneal involvement",
+      "herpes infection"
+    ],
+    "icd10": "H10.9",
+    "prevalence": "common"
   },
   {
     "source": "AAOS - Tendinitis Clinical Guidelines",
     "verified": true,
     "condition": "Tendinitis",
-    "symptoms": ["localized pain at tendon", "tenderness on touch", "stiffness", "swelling near joint", "pain worsening with activity", "reduced range of motion"],
+    "symptoms": [
+      "localized pain at tendon",
+      "tenderness on touch",
+      "stiffness",
+      "swelling near joint",
+      "pain worsening with activity",
+      "reduced range of motion"
+    ],
     "explanation": "Tendinitis is inflammation or micro-tears of a tendon, typically from overuse; common sites include the shoulder (rotator cuff), elbow (tennis elbow), and Achilles tendon.",
     "recommended_action": "Rest the affected area (RICE: rest, ice, compression, elevation), OTC NSAIDs for pain, and gradual return to activity with physiotherapy.",
     "when_to_see_doctor": "If severe pain at rest, complete loss of function, or sudden sharp pain with a snap (possible tendon rupture).",
     "severity": "low",
-    "warnings": ["tendon rupture", "inability to use limb", "significant swelling", "severe bruising"]
+    "warnings": [
+      "tendon rupture",
+      "inability to use limb",
+      "significant swelling",
+      "severe bruising"
+    ],
+    "icd10": "M77.9",
+    "prevalence": "common"
   },
   {
     "source": "AASLD - Hepatitis B Infection Management",
     "verified": true,
     "condition": "Viral Hepatitis",
-    "symptoms": ["fatigue", "jaundice", "dark urine", "pale stools", "abdominal pain", "nausea", "vomiting", "loss of appetite", "joint pain"],
+    "symptoms": [
+      "fatigue",
+      "jaundice",
+      "dark urine",
+      "pale stools",
+      "abdominal pain",
+      "nausea",
+      "vomiting",
+      "loss of appetite",
+      "joint pain"
+    ],
     "explanation": "Viral hepatitis (A, B, or C) is inflammation of the liver caused by hepatotropic viruses; severity ranges from acute self-limiting illness to chronic infection with cirrhosis risk.",
     "recommended_action": "Seek medical evaluation immediately for blood tests (liver function tests, hepatitis serology). Avoid alcohol completely. Hepatitis B and C have specific antiviral treatments.",
     "when_to_see_doctor": "Promptly if jaundice, dark urine, or abdominal pain develops. Hepatitis B and C require specialist management.",
     "severity": "medium",
-    "warnings": ["liver failure", "encephalopathy", "coagulopathy", "severe jaundice", "bleeding"]
+    "warnings": [
+      "liver failure",
+      "encephalopathy",
+      "coagulopathy",
+      "severe jaundice",
+      "bleeding"
+    ],
+    "icd10": "B19.9",
+    "prevalence": "uncommon"
   },
   {
     "source": "AHA - Atrial Fibrillation Management Guidelines",
     "verified": true,
     "condition": "Atrial Fibrillation",
-    "symptoms": ["palpitations", "irregular heartbeat", "fatigue", "shortness of breath", "dizziness", "chest discomfort", "reduced exercise tolerance", "fainting"],
+    "symptoms": [
+      "palpitations",
+      "irregular heartbeat",
+      "fatigue",
+      "shortness of breath",
+      "dizziness",
+      "chest discomfort",
+      "reduced exercise tolerance",
+      "fainting"
+    ],
     "explanation": "Atrial fibrillation (AF) is the most common sustained cardiac arrhythmia, involving disorganized atrial electrical activity; it significantly increases stroke risk.",
     "recommended_action": "Seek prompt medical evaluation; AF requires ECG confirmation, rate or rhythm control, and anticoagulation assessment to reduce stroke risk.",
     "when_to_see_doctor": "Immediately if associated with chest pain, syncope, or hemodynamic instability. Promptly even if stable, as AF requires medication management.",
     "severity": "medium",
-    "warnings": ["stroke", "cardiac failure", "rapid uncontrolled rate", "syncope", "chest pain"]
+    "warnings": [
+      "stroke",
+      "cardiac failure",
+      "rapid uncontrolled rate",
+      "syncope",
+      "chest pain"
+    ],
+    "icd10": "I48.91",
+    "prevalence": "uncommon"
   }
 ]

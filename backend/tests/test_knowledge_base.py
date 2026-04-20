@@ -22,9 +22,12 @@ REQUIRED_FIELDS = {
     "when_to_see_doctor",
     "severity",
     "warnings",
+    "icd10",
+    "prevalence",
 }
 
 VALID_SEVERITIES = {"low", "medium", "high"}
+VALID_PREVALENCES = {"very common", "common", "uncommon", "rare"}
 
 
 class KnowledgeBaseSchemaTests(unittest.TestCase):
@@ -60,6 +63,21 @@ class KnowledgeBaseSchemaTests(unittest.TestCase):
                 entry.get("severity"),
                 VALID_SEVERITIES,
                 msg=f"Entry '{entry.get('condition')}' has invalid severity",
+            )
+
+    def test_prevalence_valid_values(self):
+        for entry in self.entries:
+            self.assertIn(
+                entry.get("prevalence"),
+                VALID_PREVALENCES,
+                msg=f"Entry '{entry.get('condition')}' has invalid prevalence",
+            )
+
+    def test_icd10_nonempty(self):
+        for entry in self.entries:
+            self.assertTrue(
+                entry.get("icd10", "").strip(),
+                msg=f"Entry '{entry.get('condition')}' has empty icd10",
             )
 
     def test_symptoms_is_nonempty_list(self):

@@ -35,7 +35,8 @@ Output rules:
 """
 
 _USER_TEMPLATE = """\
-Retrieved medical context (verified sources):
+{session_context}
+Retrieved medical context (verified sources, sorted by evidence quality):
 {context}
 
 User question: {query}
@@ -43,6 +44,7 @@ Reported symptoms: {symptoms}
 
 Based solely on the retrieved context above, provide your structured JSON response.
 If the context does not strongly support any specific condition, say so and lower confidence accordingly.
+Chain of thought (do not include in output): (1) What symptoms match? (2) Which evidence tier is strongest? (3) What is the most likely condition? (4) What is the appropriate confidence?
 """
 
 
@@ -71,7 +73,13 @@ class GroqClient:
     # Public interface
     # ------------------------------------------------------------------
 
-    async def generate(self, query: str, symptoms: list[str], context: str) -> dict | None:
+    async def generate(
+        self,
+        query: str,
+        symptoms: list[str],
+        context: str,
+        session_context: str = "",
+    ) -> dict | None:
         """
         Call the Groq chat-completion API and return a parsed dict.
 
@@ -82,6 +90,7 @@ class GroqClient:
             return None
 
         prompt = _USER_TEMPLATE.format(
+            session_context=session_context + "\n" if session_context else "",
             context=context,
             query=query,
             symptoms=", ".join(symptoms) if symptoms else "none reported",

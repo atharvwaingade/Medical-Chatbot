@@ -31,7 +31,8 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(body["rag_ready"])
         self.assertIn("knowledge_entries", body)
         self.assertGreater(body["knowledge_entries"], 5)
-        self.assertEqual(body["retriever_type"], "BM25")
+        self.assertEqual(body["retriever_type"], "MedHybrid-BM25+SCS+PRF")
+        self.assertIn("active_sessions", body)
 
     def test_health_has_request_id(self):
         response = self.client.get("/health")
@@ -64,6 +65,20 @@ class ApiTests(unittest.TestCase):
         }
         self.assertTrue(required.issubset(set(body.keys())))
 
+    def test_ask_returns_session_id(self):
+        response = self.client.post("/ask", json={"query": "I have a runny nose and sneezing"})
+        body = response.json()
+        self.assertIn("session_id", body)
+        self.assertIsNotNone(body["session_id"])
+
+    def test_ask_returns_retrieval_metadata(self):
+        response = self.client.post("/ask", json={"query": "fever and cough"})
+        body = response.json()
+        self.assertIn("retrieval_metadata", body)
+        meta = body["retrieval_metadata"]
+        self.assertIn("retrieval_entropy", meta)
+        self.assertIn("retriever_type", meta)
+
     def test_ask_query_too_short(self):
         response = self.client.post("/ask", json={"query": "x"})
         self.assertEqual(response.status_code, 422)
@@ -84,6 +99,14 @@ class ApiTests(unittest.TestCase):
         ]:
             body = self.client.post("/ask", json={"query": query}).json()
             self.assertIn("not medical advice", body["disclaimer"].lower(), msg=f"query={query!r}")
+
+    def test_ask_with_session_continuity(self):
+        """Second ask with the same session_id should work without error."""
+        r1 = self.client.post("/ask", json={"query": "I have a headache"})
+        sid = r1.json()["session_id"]
+        r2 = self.client.post("/ask", json={"query": "Still have headache", "session_id": sid})
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(r2.json()["session_id"], sid)
 
     # ------------------------------------------------------------------
     # /symptom-check
@@ -117,6 +140,54 @@ class ApiTests(unittest.TestCase):
     def test_symptom_check_empty_list_rejected(self):
         response = self.client.post("/symptom-check", json={"symptoms": []})
         self.assertEqual(response.status_code, 422)
+
+    # ------------------------------------------------------------------
+    # /differential
+    # ------------------------------------------------------------------
+    def test_differential_returns_list(self):
+        response = self.client.post(
+            "/differential", json={"symptoms": ["fever", "cough", "fatigue"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIn("differentials", body)
+        self.assertIsInstance(body["differentials"], list)
+        self.assertGreater(len(body["differentials"]), 0)
+
+    def test_differential_contract(self):
+        response = self.client.post(
+            "/differential", json={"symptoms": ["headache", "nausea"]}
+        )
+        body = response.json()
+        self.assertIn("query_metadata", body)
+        self.assertIn("disclaimer", body)
+        first = body["differentials"][0]
+        for field in ("rank", "condition", "hybrid_score", "evidence_tier",
+                      "ruling_in_symptoms", "ruling_out_symptoms"):
+            self.assertIn(field, first, f"Missing field: {field}")
+
+    def test_differential_has_icd10(self):
+        response = self.client.post(
+            "/differential", json={"symptoms": ["fever", "cough"]}
+        )
+        for item in response.json()["differentials"]:
+            self.assertIn("icd10", item)
+
+    def test_differential_ranked_by_score(self):
+        response = self.client.post(
+            "/differential", json={"symptoms": ["fever", "body aches", "fatigue"]}
+        )
+        scores = [d["hybrid_score"] for d in response.json()["differentials"]]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_differential_query_metadata_entropy(self):
+        response = self.client.post(
+            "/differential", json={"symptoms": ["headache", "nausea", "light sensitivity"]}
+        )
+        meta = response.json()["query_metadata"]
+        self.assertIn("retrieval_entropy", meta)
+        self.assertGreaterEqual(meta["retrieval_entropy"], 0.0)
+        self.assertLessEqual(meta["retrieval_entropy"], 1.0)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.routes import router
 from app.config import get_settings
 from app.rag.pipeline import RAGPipeline
+from app.rag.session_store import SessionStore
 from app.services.groq_client import GroqClient
 
 logging.basicConfig(
@@ -55,6 +56,8 @@ async def lifespan(app: FastAPI):
         len(pipeline.dataset.entries),
     )
     app.state.pipeline = pipeline
+    app.state.session_store = SessionStore()
+    logger.info("SessionStore initialised")
     yield
     logger.info("RAGPipeline shutdown")
 

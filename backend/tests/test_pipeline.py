@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 os.environ["MEDICAL_DATASET_PATH"] = "backend/data/sample_medical_knowledge.json"
 
 from app.rag.pipeline import RAGPipeline  # noqa: E402
+from app.rag.session_store import SessionStore  # noqa: E402
 from app.safety.validator import SAFE_DISCLAIMER  # noqa: E402
 
 
@@ -30,7 +31,7 @@ def _make_pipeline(groq_response=None, groq_raises=False):
 
 def run(coro):
     """Run an async coroutine synchronously in tests."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 class PipelineReadyTests(unittest.TestCase):
@@ -41,6 +42,18 @@ class PipelineReadyTests(unittest.TestCase):
     def test_entries_count(self):
         p = _make_pipeline()
         self.assertGreater(len(p.dataset.entries), 5)
+
+    def test_icd10_present_in_entries(self):
+        p = _make_pipeline()
+        for entry in p.dataset.entries:
+            self.assertIn("icd10", entry, f"Missing icd10 in: {entry['condition']}")
+
+    def test_prevalence_present_in_entries(self):
+        p = _make_pipeline()
+        valid = {"common", "very common", "uncommon", "rare"}
+        for entry in p.dataset.entries:
+            self.assertIn(entry.get("prevalence", ""), valid,
+                          f"Invalid prevalence in: {entry['condition']}")
 
 
 class PipelineEmergencyTests(unittest.TestCase):
@@ -85,10 +98,6 @@ class PipelineRedFlagTests(unittest.TestCase):
 
 class PipelineConditionGroundingTests(unittest.TestCase):
     def test_groq_hallucinated_condition_replaced(self):
-        """
-        If the LLM returns a condition not in the retrieved set it must be
-        replaced with the top retrieved condition.
-        """
         groq_resp = {
             "possible_conditions": ["Ebola Fever"],  # not in our dataset
             "explanation": "Some explanation.",
@@ -100,7 +109,6 @@ class PipelineConditionGroundingTests(unittest.TestCase):
         }
         p = _make_pipeline(groq_response=groq_resp)
         result = run(p.answer("fever body aches fatigue dry cough"))
-        # Must be from retrieved set — "Ebola Fever" should be gone
         self.assertNotIn("Ebola Fever", result["possible_conditions"])
 
     def test_low_confidence_prefixed(self):
@@ -171,6 +179,121 @@ class PipelineValidatorTests(unittest.TestCase):
         p = _make_pipeline(groq_response=groq_resp)
         result = run(p.answer("fever"))
         self.assertIn(result["confidence"], ("low", "medium", "high"))
+
+
+class PipelineDifferentialTests(unittest.TestCase):
+    """Tests for the new differential() method."""
+
+    def test_differential_returns_list(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["fever", "cough", "fatigue"]))
+        self.assertIn("differentials", result)
+        self.assertIsInstance(result["differentials"], list)
+        self.assertGreater(len(result["differentials"]), 0)
+
+    def test_differential_has_rank_field(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["headache", "nausea"]))
+        for item in result["differentials"]:
+            self.assertIn("rank", item)
+
+    def test_differential_has_icd10(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["fever", "cough"]))
+        for item in result["differentials"]:
+            self.assertIn("icd10", item)
+
+    def test_differential_has_evidence_tier(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["fever", "cough"]))
+        for item in result["differentials"]:
+            self.assertIn("evidence_tier", item)
+            self.assertIn(item["evidence_tier"], [1, 2, 3, 4, 5])
+
+    def test_differential_has_ruling_in_out(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["fever", "body aches", "fatigue"]))
+        for item in result["differentials"]:
+            self.assertIn("ruling_in_symptoms", item)
+            self.assertIn("ruling_out_symptoms", item)
+
+    def test_differential_query_metadata_has_entropy(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["headache", "nausea"]))
+        meta = result["query_metadata"]
+        self.assertIn("retrieval_entropy", meta)
+        self.assertGreaterEqual(meta["retrieval_entropy"], 0.0)
+        self.assertLessEqual(meta["retrieval_entropy"], 1.0)
+
+    def test_differential_ranked_by_score(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["fever", "cough", "fatigue"]))
+        scores = [d["hybrid_score"] for d in result["differentials"]]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+
+    def test_differential_emergency_returns_empty_list(self):
+        p = _make_pipeline()
+        result = run(p.differential(symptoms=["chest pain"], query="I cannot breathe"))
+        self.assertEqual(result["differentials"], [])
+
+
+class PipelineSessionContextTests(unittest.TestCase):
+    """Tests for session context injection in the answer method."""
+
+    def test_answer_accepts_session_context_string(self):
+        p = _make_pipeline(groq_response=None)
+        result = run(p.answer("runny nose", session_context="[Turn 1: cough]"))
+        # Should not raise and should return a valid response
+        self.assertIn("possible_conditions", result)
+
+    def test_session_store_creates_and_retrieves_session(self):
+        store = SessionStore()
+        sid = store.create_session()
+        session = store.get_session(sid)
+        self.assertIsNotNone(session)
+        self.assertEqual(session.session_id, sid)
+
+    def test_session_store_get_or_create_with_none(self):
+        store = SessionStore()
+        sid, session = store.get_or_create(None)
+        self.assertIsNotNone(sid)
+        self.assertTrue(len(sid) > 0)
+
+    def test_session_store_records_turn(self):
+        store = SessionStore()
+        sid = store.create_session()
+        store.record_turn(
+            sid, "headache query", [],
+            {"possible_conditions": ["Migraine"], "severity": "medium",
+             "explanation": "headache explanation"}
+        )
+        session = store.get_session(sid)
+        self.assertEqual(len(session.turns), 1)
+        self.assertEqual(session.turns[0].conditions, ["Migraine"])
+
+    def test_session_context_summary_non_empty_after_turn(self):
+        store = SessionStore()
+        sid = store.create_session()
+        store.record_turn(
+            sid, "headache", [],
+            {"possible_conditions": ["Migraine"], "severity": "medium",
+             "explanation": "Some explanation"}
+        )
+        session = store.get_session(sid)
+        summary = session.context_summary()
+        self.assertIn("Migraine", summary)
+
+    def test_session_max_turns_enforced(self):
+        from app.rag.session_store import SESSION_MAX_TURNS
+        store = SessionStore()
+        sid = store.create_session()
+        for i in range(SESSION_MAX_TURNS + 3):
+            store.record_turn(
+                sid, f"query {i}", [],
+                {"possible_conditions": ["Condition"], "severity": "low", "explanation": "x"}
+            )
+        session = store.get_session(sid)
+        self.assertLessEqual(len(session.turns), SESSION_MAX_TURNS)
 
 
 if __name__ == "__main__":
