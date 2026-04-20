@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import './App.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -34,17 +34,9 @@ const EMPTY_RESPONSE = {
   retrieval_metadata: null,
 }
 
-const HISTORY_KEY = 'medical_assistant_history'
-
-function loadHistory() {
-  // History is kept in React state only (no localStorage) to avoid
-  // clear-text storage of potentially sensitive medical query data.
-  return []
-}
-
-function saveHistory(_history) {
-  // No-op: history is session-only and not persisted to localStorage.
-}
+// History is kept in React state only — not persisted to browser storage to
+// avoid clear-text storage of potentially sensitive medical query data.
+function loadHistory() { return [] }
 
 // ---------------------------------------------------------------------------
 // Reusable UI components
@@ -200,8 +192,6 @@ function DifferentialTable({ differentials }) {
 // ---------------------------------------------------------------------------
 
 function App() {
-  useEffect(() => { saveHistory(history) }, [history])
-
   const [activeTab, setActiveTab] = useState('ask')   // 'ask' | 'differential'
   const [query, setQuery] = useState('')
   const [symptoms, setSymptoms] = useState('')
@@ -214,8 +204,6 @@ function App() {
   const [sessionId, setSessionId] = useState(null)
   const resultRef = useRef(null)
   const diffRef = useRef(null)
-
-  useEffect(() => { saveHistory(history) }, [history])
 
   const addToHistory = (label, data) => {
     setHistory((prev) => [{ label, data, ts: Date.now() }, ...prev].slice(0, 10))
@@ -293,9 +281,7 @@ function App() {
     }
   }
 
-  const clearHistory = () => {
-    setHistory([])
-  }
+  const clearHistory = () => { setHistory([]) }
 
   const resetSession = () => {
     setSessionId(null)
