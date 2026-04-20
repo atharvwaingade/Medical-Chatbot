@@ -18,7 +18,7 @@ def health(settings: Settings = Depends(get_settings)):
     return {
         "status": "ok",
         "rag_ready": pipeline.ready,
-        "model_provider": "groq" if settings.groq_api_key else "fallback",
+        "provider": "groq" if settings.groq_api_key else "fallback",
     }
 
 

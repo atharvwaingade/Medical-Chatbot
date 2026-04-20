@@ -25,4 +25,4 @@ class AssistantResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     rag_ready: bool
-    model_provider: str
+    provider: str
