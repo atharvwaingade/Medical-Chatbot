@@ -20,9 +20,17 @@ const EMPTY_RESPONSE = {
 
 const HISTORY_KEY = 'medical_assistant_history'
 
+/**
+ * Load persisted history from localStorage.
+ *
+ * History is stored **client-side only** in the user's own browser.
+ * It is never transmitted to any third party — it only travels to the
+ * backend API the user explicitly configured.  We store only the query
+ * label plus the display fields needed to restore the result card.
+ */
 function loadHistory() {
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]')
   } catch {
     return []
   }

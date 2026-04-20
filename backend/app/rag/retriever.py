@@ -50,10 +50,10 @@ class Retriever:
         return " ".join(
             [
                 condition,
-                condition,              # 2× weight
+                condition,              # 2x weight
                 entry.get("explanation", ""),
                 symptoms_str,
-                symptoms_str,           # 2× weight
+                symptoms_str,           # 2x weight
                 " ".join(entry.get("warnings", [])),
             ]
         )
