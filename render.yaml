@@ -1,0 +1,32 @@
+services:
+  # ── Backend: FastAPI web service ───────────────────────────────────────────
+  - type: web
+    name: medical-assistant-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    envVars:
+      - key: PYTHONPATH
+        value: backend
+      - key: MEDICAL_DATASET_PATH
+        value: backend/data/sample_medical_knowledge.json
+      - key: GROQ_MODEL
+        value: llama-3.1-8b-instant
+      - key: TOP_K
+        value: "3"
+      - key: GROQ_API_KEY
+        sync: false          # set manually in the Render dashboard
+
+  # ── Frontend: static React site ────────────────────────────────────────────
+  - type: web
+    name: medical-assistant-ui
+    runtime: static
+    region: oregon
+    plan: free
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false          # paste the backend service URL from the dashboard

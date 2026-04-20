@@ -110,10 +110,35 @@ docker compose up --build
 
 ---
 
-## Deploy options
+## Deploy to Render (free tier — ≤ 512 MB RAM)
+
+The app is designed to fit comfortably within Render's 512 MB free tier.
+Heavy ML packages (sentence-transformers, faiss-cpu, numpy) are not required —
+the retrieval pipeline uses lightweight token-overlap scoring, and generation
+is handled entirely by the external Groq API.
+
+**One-click deploy via `render.yaml`:**
+
+1. Fork / push this repo to GitHub.
+2. Log in to [render.com](https://render.com) → *New* → *Blueprint*.
+3. Connect your repo — Render reads `render.yaml` and creates two services:
+   - **medical-assistant-api** – Python web service (backend, ≈ 80 MB RAM)
+   - **medical-assistant-ui** – Static site (frontend, 0 RAM)
+4. In the Render dashboard set the secret env vars:
+
+   | Service | Variable | Value |
+   |---------|----------|-------|
+   | `medical-assistant-api` | `GROQ_API_KEY` | your Groq API key |
+   | `medical-assistant-ui`  | `VITE_API_BASE_URL` | URL of the backend service (e.g. `https://medical-assistant-api.onrender.com`) |
+
+5. Click **Deploy** — both services will be live within a few minutes.
+
+> **Note:** The Render free tier spins down after 15 minutes of inactivity.
+> The first request after a cold start may take ~30 s.
+
+## Other deploy options
 
 - Railway: deploy backend and frontend as separate services, set `.env` vars
-- Render: web service for backend + static site for frontend
 - AWS: ECS/Fargate (two containers), ALB routing
 
 ---
