@@ -37,17 +37,13 @@ const EMPTY_RESPONSE = {
 const HISTORY_KEY = 'medical_assistant_history'
 
 function loadHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]')
-  } catch {
-    return []
-  }
+  // History is kept in React state only (no localStorage) to avoid
+  // clear-text storage of potentially sensitive medical query data.
+  return []
 }
 
-function saveHistory(history) {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
-  } catch { /* storage full */ }
+function saveHistory(_history) {
+  // No-op: history is session-only and not persisted to localStorage.
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +200,8 @@ function DifferentialTable({ differentials }) {
 // ---------------------------------------------------------------------------
 
 function App() {
+  useEffect(() => { saveHistory(history) }, [history])
+
   const [activeTab, setActiveTab] = useState('ask')   // 'ask' | 'differential'
   const [query, setQuery] = useState('')
   const [symptoms, setSymptoms] = useState('')
@@ -296,7 +294,7 @@ function App() {
   }
 
   const clearHistory = () => {
-    setHistory([]); localStorage.removeItem(HISTORY_KEY)
+    setHistory([])
   }
 
   const resetSession = () => {
