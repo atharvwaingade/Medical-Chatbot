@@ -5,6 +5,21 @@ RAPTOR vs. Flat Retrieval Ablation Study
 Compares retrieval quality with and without RAPTOR hierarchical routing
 on a held-out query set.  Reports MRR, Precision@k, and NDCG@5.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  EVALUATION VALIDITY WARNING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  The ABLATION_QUERIES below are author-constructed and directly
+  mapped to the 33-entry KB in sample_medical_knowledge.json.
+  This is CIRCULAR EVALUATION — the queries were written to match
+  the knowledge base.  MRR and P@k numbers computed on these queries
+  CANNOT be reported as ablation results in a paper.
+
+  For valid ablation numbers, use queries from an independent
+  benchmark such as MedQA (Jin et al. 2021) or MedMCQA (Pal et al.
+  2022) and evaluate on a real medical corpus (≥9,000 articles).
+  See eval/kb_indexer.py for corpus ingestion.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Motivation
 ----------
 The MedRAPTOR module routes queries through a 4-level ICD-10 ontology hierarchy
@@ -32,6 +47,7 @@ tree-organised retrieval. *ICLR 2024*. https://arxiv.org/abs/2401.18059
 """
 from __future__ import annotations
 
+import json
 import math
 import os
 import sys
@@ -271,11 +287,42 @@ def _print_ablation(results: dict) -> None:
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="RAPTOR ablation study")
+    parser = argparse.ArgumentParser(
+        description="RAPTOR ablation study",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "NOTE: Results with the built-in ABLATION_QUERIES are circular\n"
+            "(author-written, matched to the 33-entry KB). Use --demo to\n"
+            "acknowledge this and proceed anyway, or provide a real query set."
+        ),
+    )
     parser.add_argument("--kb", default="data/sample_medical_knowledge.json")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help=(
+            "Use built-in author-written queries (CIRCULAR — not publishable). "
+            "Required to acknowledge the circular evaluation limitation."
+        ),
+    )
     args = parser.parse_args()
+
+    if not args.demo:
+        print(
+            "ERROR: Refusing to run with built-in queries without --demo flag.\n"
+            "The ABLATION_QUERIES are author-written and matched to the 33-entry KB.\n"
+            "Add --demo to acknowledge this limitation, or provide a real query set\n"
+            "from MedQA/MedMCQA for publishable ablation results.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    print()
+    print("⚠  DEMO MODE — Results are CIRCULAR and NOT publishable.")
+    print("   Use an independent query set for publication ablation numbers.")
+    print()
 
     dataset = MedicalDataset(args.kb)
     if not dataset.entries:
@@ -286,7 +333,6 @@ if __name__ == "__main__":
     results = run_ablation(dataset.entries, args.top_k)
 
     if args.json:
-        import json
         print(json.dumps(results, indent=2))
     else:
         _print_ablation(results)
