@@ -188,34 +188,88 @@ def _infer_organ_system(text: str) -> str:
     return best if scores[best] > 0 else "General"
 
 
-def _extract_symptoms(text: str, max_symptoms: int = 20) -> list[str]:
+def _extract_symptoms(text: str, max_symptoms: int = 30) -> list[str]:
     """
-    Extract symptom phrases from article text using pattern matching.
+    Extract symptom/disease entity phrases from article text.
 
-    Returns a de-duplicated list of symptom phrases (up to max_symptoms).
-    This is a lightweight extractor — for production, use a medical NER model.
+    Primary path — Medical NER via scispacy (en_core_sci_sm ≥ 0.5.3):
+        1. Load the scispacy model (cached after first call).
+        2. Run NLP on the first 5,000 characters of text.
+        3. Collect entities with label DISEASE or SIGN_OR_SYMPTOM.
+        4. Return deduplicated, lowercased entity texts (up to max_symptoms).
+
+    Fallback path (scispacy not installed):
+        Keyword matching against a fixed list of 24 common symptoms/signs.
+
+    Install scispacy::
+
+        pip install scispacy
+        pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_core_sci_sm-0.5.3.tar.gz
+
+    Parameters
+    ----------
+    text : str
+        Article text to extract symptoms from.
+    max_symptoms : int
+        Maximum number of symptoms to return (default 30).
+
+    Returns
+    -------
+    list[str]
+        Deduplicated list of symptom/disease phrases, lowercased.
     """
-    symptoms: list[str] = []
-    seen: set[str] = set()
+    # ------------------------------------------------------------------
+    # Primary: scispacy Medical NER
+    # ------------------------------------------------------------------
+    try:
+        import spacy  # noqa: PLC0415 — deferred import so scispacy is optional
 
-    # Common symptom words that can be extracted directly
-    common_symptoms = [
+        # Cache model on the function object to avoid reloading per call
+        nlp = getattr(_extract_symptoms, "_nlp_cache", None)
+        if nlp is None:
+            try:
+                nlp = spacy.load("en_core_sci_sm")
+                _extract_symptoms._nlp_cache = nlp  # type: ignore[attr-defined]
+            except OSError:
+                # Model not installed — fall through to keyword fallback
+                raise ImportError("en_core_sci_sm model not found")
+
+        doc = nlp(text[:5000])
+        seen: set[str] = set()
+        symptoms: list[str] = []
+        for ent in doc.ents:
+            if ent.label_ in ("DISEASE", "SIGN_OR_SYMPTOM"):
+                phrase = ent.text.lower().strip()
+                if phrase and phrase not in seen:
+                    symptoms.append(phrase)
+                    seen.add(phrase)
+                    if len(symptoms) >= max_symptoms:
+                        break
+        return symptoms
+
+    except ImportError:
+        pass  # scispacy or model not available — use keyword fallback
+
+    # ------------------------------------------------------------------
+    # Fallback: keyword matching (24 hardcoded terms)
+    # ------------------------------------------------------------------
+    _FALLBACK_SYMPTOMS = [
         "fever", "cough", "dyspnoea", "shortness of breath", "chest pain",
         "nausea", "vomiting", "diarrhoea", "fatigue", "weakness", "headache",
         "dizziness", "rash", "swelling", "oedema", "pain", "discomfort",
         "palpitations", "syncope", "haemoptysis", "weight loss",
         "loss of appetite", "jaundice", "cyanosis", "tachycardia",
     ]
-
     text_lower = text.lower()
-    for symptom in common_symptoms:
-        if symptom in text_lower and symptom not in seen:
-            symptoms.append(symptom)
-            seen.add(symptom)
-            if len(symptoms) >= max_symptoms:
+    seen_fb: set[str] = set()
+    symptoms_fb: list[str] = []
+    for symptom in _FALLBACK_SYMPTOMS:
+        if symptom in text_lower and symptom not in seen_fb:
+            symptoms_fb.append(symptom)
+            seen_fb.add(symptom)
+            if len(symptoms_fb) >= max_symptoms:
                 break
-
-    return symptoms
+    return symptoms_fb
 
 
 def _infer_prevalence(text: str) -> str:
@@ -551,11 +605,23 @@ def main() -> None:
         print(f"  {s:<20}: {n}")
     print(f"  Evidence tiers: {dict(sorted(tiers.items()))}")
 
-    if len(entries) < 1000:
+    # Average symptoms per entry
+    total_symptoms = sum(len(e.get("symptoms", [])) for e in entries)
+    avg_symptoms = total_symptoms / len(entries) if entries else 0.0
+    print(f"  Avg symptoms/entry: {avg_symptoms:.2f}")
+
+    # Evidence tier breakdown as percentages
+    print("  Tier breakdown:")
+    for tier, count in sorted(tiers.items()):
+        pct = 100.0 * count / len(entries) if entries else 0.0
+        print(f"    Tier {tier}: {count:>6} entries ({pct:.1f}%)")
+
+    if len(entries) < 5000:
         print(
             f"\nWARNING: Only {len(entries)} entries indexed. "
             "For credible retrieval evaluation, index ≥9,000 entries "
-            "(full StatPearls) or ≥50,000 (PubMed abstracts).",
+            "(full StatPearls) or ≥50,000 (PubMed abstracts). "
+            "Fewer than 5,000 entries likely indicates a parsing problem.",
             file=sys.stderr,
         )
 
