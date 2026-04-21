@@ -702,7 +702,7 @@ def run_usmle_benchmark(
     }
 
 
-_NEGATION_PREFIX = _re.compile(
+_NEGATION_WORDS = _re.compile(
     r"\b(no|not|without|failed|never|unable|lack|absence|absent|"
     r"neither|nor|cannot|couldn't|didn't|doesn't|wasn't|weren't|"
     r"isn't|aren't|hasn't|haven't|hadn't)\b"
@@ -714,6 +714,8 @@ _CONCLUSION_SENTENCE_COUNT = 2
 _CONCLUSION_SENTENCE_WEIGHT = 3.0
 _QUESTION_DIRECTION_PRIOR = 0.5
 _QUESTION_POSITIVE_START = _re.compile(r"^(does|is|are|can|do|was|were|has|have|did)\b")
+_QUESTION_NEGATIVE_HINT = _re.compile(r"\b(fail|prevent|lack|absent|ineffective)\b")
+_QUESTION_UNCERTAIN_HINT = _re.compile(r"\b(unclear|unknown|controversial|uncertain)\b")
 _MAYBE_THRESHOLD_RATIO = 0.6
 _NO_THRESHOLD_RATIO = 0.75
 
@@ -745,7 +747,7 @@ def _score_sentence(
             continue
         idx = s.find(sig)
         prefix_window = s[max(0, idx - _NEGATION_CONTEXT_WINDOW): idx]
-        if _NEGATION_PREFIX.search(prefix_window):
+        if _NEGATION_WORDS.search(prefix_window):
             n += weight * _NEGATED_YES_TO_NO_WEIGHT
         else:
             y += weight
@@ -775,6 +777,7 @@ def _predict_pubmedqa_answer_keyword(
         - Uses negation-aware handling where negated positive phrases (e.g.,
           "did not significantly improve") add to the no-score instead of yes.
         - Applies calibrated decision thresholds to reduce class imbalance bias.
+        - If no signals are detected, falls back to "yes" for deterministic output.
     """
     yes_signals = [
         "significantly", "statistically significant", "p <", "p=0.0", "p < 0.05",
@@ -867,9 +870,9 @@ def _predict_pubmedqa_answer_keyword(
     q_lower = question_text.lower()
     if _QUESTION_POSITIVE_START.match(q_lower):
         total_y += _QUESTION_DIRECTION_PRIOR
-    if any(w in q_lower for w in ["fail", "prevent", "lack", "absent", "ineffective"]):
+    if _QUESTION_NEGATIVE_HINT.search(q_lower):
         total_n += _QUESTION_DIRECTION_PRIOR
-    if any(w in q_lower for w in ["unclear", "unknown", "controversial", "uncertain"]):
+    if _QUESTION_UNCERTAIN_HINT.search(q_lower):
         total_m += _QUESTION_DIRECTION_PRIOR
 
     if total_m > _MAYBE_THRESHOLD_RATIO * (total_y + total_n) and total_m > 0:
