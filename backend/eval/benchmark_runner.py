@@ -120,10 +120,11 @@ import csv
 import json
 import math
 import os
+import random
 import sys
 import time
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Tuple
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -581,6 +582,67 @@ def _softmax_confidence(scores: list[float]) -> float:
     return scores[0] / total
 
 
+def compute_bootstrap_ci(
+    metric_values: list[float],
+    n_boot: int = 1000,
+    seed: int = 42,
+) -> Tuple[float, float]:
+    """
+    Compute a 95% bootstrap confidence interval for the mean of *metric_values*.
+
+    Uses non-parametric percentile bootstrap (Efron & Tibshirani, 1993) with a
+    fixed random seed for reproducibility.
+
+    Parameters
+    ----------
+    metric_values : list[float]
+        Per-question metric values (e.g. per-question Acc@1 as 0/1, or per-question
+        MRR).  The point estimate is ``mean(metric_values)``.
+    n_boot : int
+        Number of bootstrap resamples (default 1,000).
+    seed : int
+        Random seed for reproducibility (default 42).
+
+    Returns
+    -------
+    (lower_95, upper_95) : Tuple[float, float]
+        The 2.5th and 97.5th percentiles of the bootstrap distribution of the mean,
+        rounded to 4 decimal places.
+
+    Example
+    -------
+    >>> accs = [1, 0, 1, 1, 0, 1, 0, 1, 1, 0]
+    >>> lo, hi = compute_bootstrap_ci(accs, n_boot=1000, seed=42)
+    >>> 0.0 <= lo <= hi <= 1.0
+    True
+
+    References
+    ----------
+    Efron, B., & Tibshirani, R. J. (1993). An Introduction to the Bootstrap.
+    Chapman & Hall.
+    """
+    n = len(metric_values)
+    if n == 0:
+        return (0.0, 0.0)
+    if n == 1:
+        v = metric_values[0]
+        return (round(v, 4), round(v, 4))
+
+    rng = random.Random(seed)
+    boot_means: list[float] = []
+    for _ in range(n_boot):
+        sample = [metric_values[rng.randint(0, n - 1)] for _ in range(n)]
+        boot_means.append(sum(sample) / n)
+
+    boot_means.sort()
+    lo_idx = int(0.025 * n_boot)
+    hi_idx = int(0.975 * n_boot) - 1
+    # Clamp indices to valid range
+    lo_idx = max(0, min(lo_idx, n_boot - 1))
+    hi_idx = max(0, min(hi_idx, n_boot - 1))
+    return (round(boot_means[lo_idx], 4), round(boot_means[hi_idx], 4))
+
+
 # ---------------------------------------------------------------------------
 # BM25-Only Baseline
 # ---------------------------------------------------------------------------
@@ -631,7 +693,9 @@ def run_usmle_benchmark(
         "retriever": retriever_name,
         "n_questions": len(questions),
         "accuracy@1": round(sum(accuracies) / len(accuracies), 4),
+        "acc1_ci": compute_bootstrap_ci(accuracies),
         "mrr": round(sum(mrrs) / len(mrrs), 4),
+        "mrr_ci": compute_bootstrap_ci(mrrs),
         f"ndcg@{top_k}": round(sum(ndcgs) / len(ndcgs), 4),
         "ece": round(compute_ece_continuous(accuracies, confidences), 4),
     }
@@ -665,26 +729,39 @@ def run_pubmedqa_benchmark(
     }
 
 
+def _format_ci(ci: Optional[tuple]) -> str:
+    """Format a (lo, hi) CI tuple as a compact string, e.g. '[0.61, 0.70]'."""
+    if ci is None:
+        return "       N/A"
+    return f"[{ci[0]:.4f},{ci[1]:.4f}]"
+
+
 def _print_table(results: list[dict], include_published: bool = True) -> None:
-    """Pretty-print benchmark results as an ASCII table."""
+    """Pretty-print benchmark results as an ASCII table with 95% bootstrap CIs."""
+    col_w = 100
     print()
-    print("=" * 78)
-    header = (f"{'Benchmark':<20} {'System':<28} {'Acc@1':>6} "
-              f"{'MRR':>6} {'NDCG@5':>7} {'ECE':>6} {'Source':>10}")
+    print("=" * col_w)
+    header = (
+        f"{'Benchmark':<20} {'System':<28} {'Acc@1':>6} {'Acc@1 95% CI':>16} "
+        f"{'MRR':>6} {'MRR 95% CI':>14} {'NDCG@5':>7} {'ECE':>6} {'Source':>8}"
+    )
     print(header)
-    print("-" * 78)
+    print("-" * col_w)
 
     for r in results:
         source = r.get("_source", "this work")
         if "mrr" in r:
-            mrr_str = f"{r['mrr']:.4f}" if r['mrr'] is not None else "  N/A"
-            ndcg_str = f"{r.get(f'ndcg@5', r.get('ndcg@5', None)):.4f}" \
-                if r.get("ndcg@5") is not None else "   N/A"
-            ece_str = f"{r['ece']:.4f}" if r.get("ece") is not None else "  N/A"
+            acc_str = f"{r.get('accuracy@1', 0):>6.4f}"
+            acc_ci_str = _format_ci(r.get("acc1_ci"))
+            mrr_str = f"{r['mrr']:>6.4f}" if r['mrr'] is not None else "    N/A"
+            mrr_ci_str = _format_ci(r.get("mrr_ci"))
+            ndcg_str = f"{r.get('ndcg@5', 0):>7.4f}" if r.get("ndcg@5") is not None else "    N/A"
+            ece_str = f"{r['ece']:>6.4f}" if r.get("ece") is not None else "   N/A"
             print(
                 f"{r['benchmark']:<20} {r['retriever']:<28} "
-                f"{r.get('accuracy@1', '-'):>6} {mrr_str:>6} "
-                f"{ndcg_str:>7} {ece_str:>6} {source:>10}"
+                f"{acc_str} {acc_ci_str} "
+                f"{mrr_str} {mrr_ci_str} "
+                f"{ndcg_str} {ece_str} {source:>8}"
             )
         else:
             print(
@@ -694,7 +771,7 @@ def _print_table(results: list[dict], include_published: bool = True) -> None:
 
     # Print published reference numbers
     if include_published:
-        print("-" * 78)
+        print("-" * col_w)
         print("  Published reference numbers (Wu et al. 2024, arXiv:2402.13178):")
         for sys_name, benchmarks in PUBLISHED_MEDRAG_NUMBERS.items():
             for bench_name, metrics in benchmarks.items():
@@ -702,10 +779,10 @@ def _print_table(results: list[dict], include_published: bool = True) -> None:
                 if acc is not None:
                     print(
                         f"{'  ' + bench_name:<20} {sys_name:<28} "
-                        f"{acc:>6.4f}  {'N/A':>6}  {'N/A':>7}  {'N/A':>6} {'published':>10}"
+                        f"{acc:>6.4f} {'[published]':>16}  {'N/A':>6} {'':>14}  {'N/A':>7}  {'N/A':>6} {'pub':>8}"
                     )
 
-    print("=" * 78)
+    print("=" * col_w)
     print()
     print("NOTE: To produce valid benchmark numbers for publication:")
     print("  1. Use --dataset-file with official MedQA/PubMedQA test splits.")

@@ -1,0 +1,30 @@
+[
+  {
+    "_note": "PLACEHOLDER — populate by running the command below with real data files.",
+    "_command": "python eval/benchmark_runner.py --dataset-file path/to/medqa/questions/US/test.jsonl --dataset-format medqa --kb data/statpearls_kb.json --json > results/medqa_results.json",
+    "_download_medqa": "https://drive.google.com/drive/folders/1ImYUSLk9JbgHXOemfvyiDiirluZHPeQw",
+    "_download_statpearls_kb": "Run: python eval/kb_indexer.py --format statpearls --source-file statpearls.jsonl --output data/statpearls_kb.json",
+    "_n_questions_expected": 1273,
+    "benchmark": "USMLE Step 1",
+    "retriever": "BM25-only",
+    "n_questions": null,
+    "accuracy@1": null,
+    "acc1_ci": null,
+    "mrr": null,
+    "mrr_ci": null,
+    "ndcg@5": null,
+    "ece": null
+  },
+  {
+    "_note": "PLACEHOLDER — populate by running the command above.",
+    "benchmark": "USMLE Step 1",
+    "retriever": "MedRAG-Turbo",
+    "n_questions": null,
+    "accuracy@1": null,
+    "acc1_ci": null,
+    "mrr": null,
+    "mrr_ci": null,
+    "ndcg@5": null,
+    "ece": null
+  }
+]
