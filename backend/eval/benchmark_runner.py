@@ -713,6 +713,7 @@ _NEGATED_YES_TO_NO_WEIGHT = 0.8
 _CONCLUSION_SENTENCE_COUNT = 2
 _CONCLUSION_SENTENCE_WEIGHT = 3.0
 _QUESTION_DIRECTION_PRIOR = 0.5
+_QUESTION_POSITIVE_START = _re.compile(r"^(does|is|are|can|do|was|were|has|have|did)\b")
 _MAYBE_THRESHOLD_RATIO = 0.6
 _NO_THRESHOLD_RATIO = 0.75
 
@@ -864,9 +865,9 @@ def _predict_pubmedqa_answer_keyword(
         total_m += dm
 
     q_lower = question_text.lower()
-    if _re.match(r"^(does|is|are|can|do|was|were|has|have|did)\b", q_lower):
+    if _QUESTION_POSITIVE_START.match(q_lower):
         total_y += _QUESTION_DIRECTION_PRIOR
-    if any(w in q_lower for w in ["fail", "prevent", "lack", "absent", "ineffect"]):
+    if any(w in q_lower for w in ["fail", "prevent", "lack", "absent", "ineffective"]):
         total_n += _QUESTION_DIRECTION_PRIOR
     if any(w in q_lower for w in ["unclear", "unknown", "controversial", "uncertain"]):
         total_m += _QUESTION_DIRECTION_PRIOR
