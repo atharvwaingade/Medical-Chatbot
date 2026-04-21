@@ -708,6 +708,13 @@ _NEGATION_PREFIX = _re.compile(
     r"isn't|aren't|hasn't|haven't|hadn't)\b"
 )
 _SENT_SPLIT = _re.compile(r"(?<=[.!?])\s+")
+_NEGATION_CONTEXT_WINDOW = 60
+_NEGATED_YES_TO_NO_WEIGHT = 0.8
+_CONCLUSION_SENTENCE_COUNT = 2
+_CONCLUSION_SENTENCE_WEIGHT = 3.0
+_QUESTION_DIRECTION_PRIOR = 0.5
+_MAYBE_THRESHOLD_RATIO = 0.6
+_NO_THRESHOLD_RATIO = 0.75
 
 
 def _split_sentences(text: str) -> list[str]:
@@ -736,9 +743,9 @@ def _score_sentence(
         if sig not in s:
             continue
         idx = s.find(sig)
-        prefix_window = s[max(0, idx - 60): idx]
+        prefix_window = s[max(0, idx - _NEGATION_CONTEXT_WINDOW): idx]
         if _NEGATION_PREFIX.search(prefix_window):
-            n += weight * 0.8
+            n += weight * _NEGATED_YES_TO_NO_WEIGHT
         else:
             y += weight
 
@@ -751,7 +758,22 @@ def _predict_pubmedqa_answer_keyword(
     retriever: "Retriever",
 ) -> str:
     """
-    Research-improved keyword-heuristic predictor for PubMedQA yes/no/maybe.
+    Predict PubMedQA answer labels ("yes", "no", "maybe") with a keyword heuristic.
+
+    Args:
+        question_text: PubMedQA yes/no/maybe question.
+        contexts: Retrieved abstract context chunks used as primary evidence.
+        retriever: Retriever instance used for lightweight KB evidence augmentation.
+
+    Returns:
+        One of "yes", "no", or "maybe".
+
+    Notes:
+        - Uses sentence-level scoring with higher weight on the final conclusion
+          sentences of each context chunk.
+        - Uses negation-aware handling where negated positive phrases (e.g.,
+          "did not significantly improve") add to the no-score instead of yes.
+        - Applies calibrated decision thresholds to reduce class imbalance bias.
     """
     yes_signals = [
         "significantly", "statistically significant", "p <", "p=0.0", "p < 0.05",
@@ -814,8 +836,8 @@ def _predict_pubmedqa_answer_keyword(
             continue
         n_sents = len(sents)
         for i, s in enumerate(sents):
-            if i >= n_sents - 2:
-                all_sents.append((s, 3.0))
+            if i >= n_sents - _CONCLUSION_SENTENCE_COUNT:
+                all_sents.append((s, _CONCLUSION_SENTENCE_WEIGHT))
             else:
                 all_sents.append((s, 1.0))
 
@@ -843,15 +865,15 @@ def _predict_pubmedqa_answer_keyword(
 
     q_lower = question_text.lower()
     if _re.match(r"^(does|is|are|can|do|was|were|has|have|did)\b", q_lower):
-        total_y += 0.5
+        total_y += _QUESTION_DIRECTION_PRIOR
     if any(w in q_lower for w in ["fail", "prevent", "lack", "absent", "ineffect"]):
-        total_n += 0.5
+        total_n += _QUESTION_DIRECTION_PRIOR
     if any(w in q_lower for w in ["unclear", "unknown", "controversial", "uncertain"]):
-        total_m += 0.5
+        total_m += _QUESTION_DIRECTION_PRIOR
 
-    if total_m > 0.6 * (total_y + total_n) and total_m > 0:
+    if total_m > _MAYBE_THRESHOLD_RATIO * (total_y + total_n) and total_m > 0:
         return "maybe"
-    if total_n > total_y * 0.75:
+    if total_n > total_y * _NO_THRESHOLD_RATIO:
         return "no"
     return "yes"
 
