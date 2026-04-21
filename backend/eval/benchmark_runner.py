@@ -121,6 +121,7 @@ import json
 import math
 import os
 import random
+import re as _re
 import sys
 import time
 from dataclasses import dataclass, field
@@ -701,56 +702,156 @@ def run_usmle_benchmark(
     }
 
 
+_NEGATION_PREFIX = _re.compile(
+    r"\b(no|not|without|failed|never|unable|lack|absence|absent|"
+    r"neither|nor|cannot|couldn't|didn't|doesn't|wasn't|weren't|"
+    r"isn't|aren't|hasn't|haven't|hadn't)\b"
+)
+_SENT_SPLIT = _re.compile(r"(?<=[.!?])\s+")
+
+
+def _split_sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENT_SPLIT.split(text) if s.strip()]
+
+
+def _score_sentence(
+    sent: str,
+    yes_signals: list[str],
+    no_signals: list[str],
+    maybe_signals: list[str],
+    weight: float = 1.0,
+) -> tuple[float, float, float]:
+    s = sent.lower()
+    y = n = m = 0.0
+
+    for sig in maybe_signals:
+        if sig in s:
+            m += weight
+
+    for sig in no_signals:
+        if sig in s:
+            n += weight
+
+    for sig in yes_signals:
+        if sig not in s:
+            continue
+        idx = s.find(sig)
+        prefix_window = s[max(0, idx - 60): idx]
+        if _NEGATION_PREFIX.search(prefix_window):
+            n += weight * 0.8
+        else:
+            y += weight
+
+    return y, n, m
+
+
 def _predict_pubmedqa_answer_keyword(
     question_text: str,
     contexts: list[str],
     retriever: "Retriever",
 ) -> str:
     """
-    Fallback keyword-heuristic predictor (used when Ollama is unavailable).
-    Counts affirmative/negative signal words in the abstract text.
+    Research-improved keyword-heuristic predictor for PubMedQA yes/no/maybe.
     """
-    combined = " ".join(contexts).lower() if contexts else ""
+    yes_signals = [
+        "significantly", "statistically significant", "p <", "p=0.0", "p < 0.05",
+        "confidence interval", "odds ratio", "relative risk", "hazard ratio",
+        "effective", "efficacious", "beneficial", "superior", "outperformed",
+        "demonstrated", "confirmed", "validated", "established",
+        "reduced", "improved", "increased", "decreased", "enhanced", "promoted",
+        "associated with", "correlated with", "predicted", "mediated",
+        "our results suggest", "findings suggest", "we found that",
+        "evidence supports", "supports the use", "we conclude",
+        "data indicate", "results indicate", "study demonstrates",
+        "our study confirms", "results confirm", "our findings support",
+        "we report", "we observed", "results show",
+    ]
+
+    no_signals = [
+        "no significant", "not significant", "no statistically significant",
+        "no significant difference", "no significant association",
+        "no significant effect", "no significant improvement",
+        "no significant reduction", "no significant increase",
+        "no difference", "no effect", "no association", "no benefit",
+        "no improvement", "not superior", "not associated",
+        "not significantly", "not statistically",
+        "failed to", "failed to demonstrate", "failed to show",
+        "did not", "did not significantly", "did not improve",
+        "did not reduce", "did not differ", "did not show",
+        "does not", "does not support", "do not support",
+        "null hypothesis", "null result",
+        "we found no", "we found no significant",
+        "results do not support", "results did not support",
+        "results showed no", "analysis showed no",
+        "could not demonstrate", "unable to demonstrate",
+        "no statistically", "not statistically significant",
+        "ineffective", "ineffectiveness",
+        "comparable to placebo", "similar to placebo", "no better than",
+        "lack of efficacy", "lack of evidence", "absence of",
+        "no evidence of", "no evidence for",
+    ]
+
+    maybe_signals = [
+        "may", "might", "possibly", "potentially", "could be",
+        "appears to", "seems to", "suggests that further",
+        "unclear", "inconclusive", "uncertain", "equivocal",
+        "insufficient evidence", "limited evidence", "insufficient data",
+        "conflicting", "mixed results", "inconsistent",
+        "further research", "more studies", "larger studies",
+        "further investigation", "warrant further", "warrants further",
+        "cannot conclude", "cannot be concluded", "cannot determine",
+        "needs to be confirmed", "requires confirmation",
+        "preliminary", "pilot study", "small sample",
+        "heterogeneous", "high heterogeneity",
+        "under certain conditions", "in selected patients",
+        "in some patients", "in a subset",
+    ]
+
+    all_sents: list[tuple[str, float]] = []
+    for ctx in contexts:
+        sents = _split_sentences(ctx)
+        if not sents:
+            continue
+        n_sents = len(sents)
+        for i, s in enumerate(sents):
+            if i >= n_sents - 2:
+                all_sents.append((s, 3.0))
+            else:
+                all_sents.append((s, 1.0))
 
     pq = QueryProcessor.process(question_text, [])
     kb_results = retriever.retrieve_results(pq.expanded_query, pq.medical_tokens, 3)
-    kb_text = " ".join(r.entry.get("explanation", "") + " " + r.entry.get("description", "")
-                       for r in kb_results).lower()
-    full_text = combined + " " + kb_text
+    kb_text = " ".join(
+        r.entry.get("explanation", "") + " " + r.entry.get("description", "")
+        for r in kb_results
+    )
+    for sent in _split_sentences(kb_text):
+        all_sents.append((sent, 1.0))
 
-    yes_signals = [
-        "significantly", "significantly reduced", "significantly improved",
-        "effective", "efficacious", "beneficial", "demonstrated",
-        "associated with", "reduced", "improved", "increased",
-        "higher", "lower than control", "statistically significant",
-        "p <", "p=0.0", "confidence interval", "superior",
-        "our results suggest", "findings suggest", "we found",
-        "evidence supports", "supports the use",
-    ]
-    no_signals = [
-        "no significant", "not significant", "no difference",
-        "failed to", "did not", "does not", "no effect",
-        "no association", "no benefit", "ineffective",
-        "no statistically significant", "not associated",
-        "null hypothesis", "no improvement", "not superior",
-        "we found no", "results do not support",
-    ]
-    maybe_signals = [
-        "may", "might", "possibly", "unclear", "inconclusive",
-        "further research", "more studies", "limited evidence",
-        "conflicting", "mixed results", "warrant further",
-        "cannot conclude", "insufficient evidence",
-    ]
+    total_y = total_n = total_m = 0.0
+    for sent, w in all_sents:
+        dy, dn, dm = _score_sentence(
+            sent,
+            yes_signals,
+            no_signals,
+            maybe_signals,
+            weight=w,
+        )
+        total_y += dy
+        total_n += dn
+        total_m += dm
 
-    yes_score = sum(1 for s in yes_signals if s in full_text)
-    no_score = sum(1 for s in no_signals if s in full_text)
-    maybe_score = sum(1 for s in maybe_signals if s in full_text)
+    q_lower = question_text.lower()
+    if _re.match(r"^(does|is|are|can|do|was|were|has|have|did)\b", q_lower):
+        total_y += 0.5
+    if any(w in q_lower for w in ["fail", "prevent", "lack", "absent", "ineffect"]):
+        total_n += 0.5
+    if any(w in q_lower for w in ["unclear", "unknown", "controversial", "uncertain"]):
+        total_m += 0.5
 
-    no_score = int(no_score * 1.2)
-
-    if maybe_score > yes_score and maybe_score > no_score:
+    if total_m > 0.6 * (total_y + total_n) and total_m > 0:
         return "maybe"
-    if no_score > yes_score:
+    if total_n > total_y * 0.75:
         return "no"
     return "yes"
 
