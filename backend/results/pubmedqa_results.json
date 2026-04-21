@@ -1,0 +1,29 @@
+[
+  {
+    "_note": "PLACEHOLDER — populate by running the command below with real data files.",
+    "_command": "python eval/benchmark_runner.py --dataset-file path/to/pubmedqa/data/test_ground_truth.json --dataset-format pubmedqa --kb data/statpearls_kb.json --json > results/pubmedqa_results.json",
+    "_download_pubmedqa": "https://pubmedqa.github.io/",
+    "_n_questions_expected": 500,
+    "benchmark": "PubMedQA",
+    "retriever": "BM25-only",
+    "n_questions": null,
+    "accuracy@1": null,
+    "acc1_ci": null,
+    "mrr": null,
+    "mrr_ci": null,
+    "ndcg@5": null,
+    "ece": null
+  },
+  {
+    "_note": "PLACEHOLDER — populate by running the command above.",
+    "benchmark": "PubMedQA",
+    "retriever": "MedRAG-Turbo",
+    "n_questions": null,
+    "accuracy@1": null,
+    "acc1_ci": null,
+    "mrr": null,
+    "mrr_ci": null,
+    "ndcg@5": null,
+    "ece": null
+  }
+]
